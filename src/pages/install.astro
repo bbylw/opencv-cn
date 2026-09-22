@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
 import PageHero from '../components/PageHero.astro';
 
 const methods = [
@@ -138,7 +139,7 @@ const requirements = [
             <p class="mt-2 text-sm text-muted">{m.pros}</p>
             <div class="mt-4 space-y-3">
               {m.steps.map((step) => (
-                <pre class="codeblock"><code>{step}</code></pre>
+                <CodeBlock>{step}</CodeBlock>
               ))}
             </div>
             <div class="mt-4 rounded-lg border border-accent/30 bg-accent-soft p-3">

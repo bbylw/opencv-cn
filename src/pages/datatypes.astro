@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
 import PageHero from '../components/PageHero.astro';
 
 interface Row {
@@ -146,7 +147,7 @@ const levelStyle = {
       </div>
       <div>
         <h2 class="section-title">构造示例</h2>
-        <pre class="codeblock mt-5"><code>{examples.map((e) => `// ${e.t}\n${e.c}`).join('\n\n')}</code></pre>
+        <CodeBlock class="mt-5">{examples.map((e) => `// ${e.t}\n${e.c}`).join('\n\n')}</CodeBlock>
       </div>
     </section>
 

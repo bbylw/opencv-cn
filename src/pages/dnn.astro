@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
 import PageHero from '../components/PageHero.astro';
 
 const overview = [
@@ -224,12 +225,28 @@ const hf = [
 
     <!-- Code -->
     <section class="mt-14 grid gap-6 lg:grid-cols-2">
-      <div class="overflow-hidden card">
-        <div class="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">Python 推理示例</div>
+      <div class="copy-scope overflow-hidden card">
+        <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+          <span class="text-sm font-semibold text-ink">Python 推理示例</span>
+          <button type="button" data-copy-btn class="copy-btn copy-btn-light shrink-0" aria-label="复制代码">
+            <Icon name="copy" class="copy-icon size-3.5" />
+            <Icon name="check" class="check-icon size-3.5" />
+            <span class="copy-label">复制</span>
+            <span class="copied-label">已复制</span>
+          </button>
+        </div>
         <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{demo}</code></pre>
       </div>
-      <div class="overflow-hidden card">
-        <div class="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">C++ 推理示例</div>
+      <div class="copy-scope overflow-hidden card">
+        <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+          <span class="text-sm font-semibold text-ink">C++ 推理示例</span>
+          <button type="button" data-copy-btn class="copy-btn copy-btn-light shrink-0" aria-label="复制代码">
+            <Icon name="copy" class="copy-icon size-3.5" />
+            <Icon name="check" class="check-icon size-3.5" />
+            <span class="copy-label">复制</span>
+            <span class="copied-label">已复制</span>
+          </button>
+        </div>
         <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{cppDemo}</code></pre>
       </div>
     </section>

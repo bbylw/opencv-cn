@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
 import Icon from '../components/Icon.astro';
 
 const highlights = [
@@ -70,10 +71,10 @@ cv2.imshow("edges", edges)
 cv2.waitKey(0)`;
 
 const stats = [
-  { v: '2,500+', k: '优化算法' },
-  { v: '4', k: '语言接口' },
-  { v: '17', k: '主模块' },
-  { v: '80%+', k: 'ONNX 覆盖率' },
+  { v: '2,500+', k: '优化算法', n: 2500, suffix: '+' },
+  { v: '4', k: '语言接口', n: 4, suffix: '' },
+  { v: '17', k: '主模块', n: 17, suffix: '' },
+  { v: '80%+', k: 'ONNX 覆盖率', n: 80, suffix: '%+' },
 ];
 
 const compare = [
@@ -110,13 +111,7 @@ const compare = [
         </div>
       </div>
       <div class="min-w-0 lg:col-span-5">
-        <div class="overflow-hidden rounded-xl border border-codeline bg-codebg">
-          <div class="flex items-center justify-between border-b border-codeline px-4 py-2.5">
-            <span class="font-mono text-xs text-faint">quickstart.py</span>
-            <span class="chip">Python</span>
-          </div>
-          <pre class="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-codeink"><code>{quickstart}</code></pre>
-        </div>
+        <CodeBlock file="quickstart.py" lang="Python">{quickstart}</CodeBlock>
         <p class="mt-3 text-right text-xs text-faint">
           更多语言入口见
           <a href="/examples" class="text-accent hover:underline">示例代码</a>
@@ -131,7 +126,9 @@ const compare = [
       {
         stats.map((s) => (
           <div class="px-2 text-center">
-            <dt class="text-3xl font-black tracking-tight text-ink">{s.v}</dt>
+            <dt class="text-3xl font-black tracking-tight text-ink" data-count={s.n} data-suffix={s.suffix}>
+              {s.v}
+            </dt>
             <dd class="mt-1 text-sm text-muted">{s.k}</dd>
           </div>
         ))
@@ -196,13 +193,7 @@ const compare = [
           { name: 'Java', note: 'Android 开发常用绑定', code: 'Mat img = Imgcodecs.imread("cat.jpg");' },
           { name: 'JavaScript', note: 'OpenCV.js，WebAssembly 运行', code: 'let img = cv.imread("canvas");' },
         ].map((lang) => (
-          <div class="overflow-hidden card">
-            <div class="flex items-center justify-between border-b border-line px-5 py-3">
-              <h3 class="font-bold text-ink">{lang.name}</h3>
-              <span class="text-xs text-faint">{lang.note}</span>
-            </div>
-            <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{lang.code}</code></pre>
-          </div>
+          <CodeBlock file={lang.name} note={lang.note}>{lang.code}</CodeBlock>
         ))
       }
     </div>
@@ -251,4 +242,35 @@ const compare = [
       </table>
     </div>
   </section>
+
+  <script>
+    const dts = document.querySelectorAll<HTMLElement>('[data-count]');
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const run = (el: HTMLElement) => {
+        const target = Number(el.dataset.count);
+        const suffix = el.dataset.suffix ?? '';
+        const t0 = performance.now();
+        const dur = 900;
+        const tick = (t: number) => {
+          const p = Math.min(1, (t - t0) / dur);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(target * eased).toLocaleString('en-US') + (p === 1 ? suffix : '');
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      };
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const en of entries) {
+            if (en.isIntersecting) {
+              io.unobserve(en.target);
+              run(en.target as HTMLElement);
+            }
+          }
+        },
+        { threshold: 0.6 },
+      );
+      dts.forEach((el) => io.observe(el));
+    }
+  </script>
 </BaseLayout>

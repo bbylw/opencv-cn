@@ -112,11 +112,6 @@ body {
   @apply rounded-md bg-raised px-1.5 py-0.5 font-mono text-[0.8em] text-ink;
 }
 
-/* Dark code block, constant across themes. */
-.codeblock {
-  @apply overflow-x-auto rounded-xl border border-codeline bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink;
-}
-
 /* Documentation table. */
 .doc-table {
   @apply w-full min-w-[640px] border-collapse text-left text-sm;
@@ -129,6 +124,12 @@ body {
 }
 .doc-table tr:last-child td {
   @apply border-b-0;
+}
+.doc-table tbody tr {
+  @apply transition-colors;
+}
+.doc-table tbody tr:hover {
+  @apply bg-raised/60;
 }
 
 /* Small status / meta chip. */
@@ -157,4 +158,41 @@ body {
 /* Section heading (docs pages). */
 .section-title {
   @apply text-lg font-bold tracking-tight text-ink;
+}
+
+/* Copy button on code headers (dark header by default). */
+.copy-btn {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-codeline px-2.5 py-1 font-mono text-[11px] leading-4 text-codeink/70 transition-colors hover:border-codeink/50 hover:text-codeink;
+}
+.copy-btn .check-icon,
+.copy-btn .copied-label {
+  display: none;
+}
+.copy-btn.is-copied {
+  @apply border-accent/70 text-accent;
+}
+.copy-btn.is-copied .copy-icon,
+.copy-btn.is-copied .copy-label {
+  display: none;
+}
+.copy-btn.is-copied .check-icon,
+.copy-btn.is-copied .copied-label {
+  display: inline-block;
+}
+/* Light-surface header variant (example cards). */
+.copy-btn-light {
+  @apply border-line text-muted hover:border-accent hover:text-accent;
+}
+
+/* Mobile menu entrance. */
+@media (prefers-reduced-motion: no-preference) {
+  #mobile-menu:not(.hidden) {
+    animation: menu-in 0.18s ease-out;
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
 }

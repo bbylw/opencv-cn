@@ -66,5 +66,20 @@ const isHome = Astro.url.pathname === '/';
     </main>
     <Footer />
     <ClientRouter />
+    <script>
+      document.addEventListener('click', async (e) => {
+        const btn = (e.target as HTMLElement).closest?.('[data-copy-btn]');
+        if (!btn) return;
+        const code = btn.closest('.copy-scope')?.querySelector('pre code');
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code.textContent ?? '');
+        } catch {
+          return;
+        }
+        btn.classList.add('is-copied');
+        window.setTimeout(() => btn.classList.remove('is-copied'), 1600);
+      });
+    </script>
   </body>
 </html>

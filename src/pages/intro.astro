@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
 import PageHero from '../components/PageHero.astro';
 
 const concepts = [
@@ -149,7 +150,7 @@ const moduleRows = [
             <article id={c.id} class="card scroll-mt-24 p-6">
               <h3 class="text-lg font-bold tracking-tight text-ink">{c.title}</h3>
               <p class="mt-2 text-sm leading-relaxed text-muted">{c.body}</p>
-              <pre class="codeblock mt-4"><code>{c.code}</code></pre>
+              <CodeBlock class="mt-4">{c.code}</CodeBlock>
             </article>
           ))
         }

@@ -1,8 +1,5 @@
-# OpenCV 中文文档网站
-
-基于 [OpenCV 5.0 官方文档](https://docs.opencv.org/5.0/) 整理的中文静态站点，在线访问：<https://opencv.ndjp.net>
-
 ## OpenCV：开源计算机视觉库
+
 
 ### 资源
 
@@ -14,6 +11,7 @@
 * 问题追踪：<https://github.com/opencv/opencv/issues>
 * 额外的 OpenCV 功能：<https://github.com/opencv/opencv_contrib>
 * 捐赠给 OpenCV：<https://opencv.org/support/>
+
 
 ### 贡献方式
 
@@ -36,26 +34,3 @@
 * [在 Mastodon 关注 OpenCV](https://mastodon.social/@opencv)（Fediverse 联邦宇宙）
 * [在 X 关注 OpenCV](https://x.com/opencvofficial)
 * [OpenCV.ai](https://opencv.ai)：OpenCV 团队提供的计算机视觉与 AI 开发服务。
-
-## 网站开发
-
-本站内容涵盖：简介、安装配置、核心模块、像素数据类型、教程导航、DNN 深度学习、多语言示例、社区资源、贡献指南与常见问题。
-
-### 技术栈
-
-- [Astro 7.3.3](https://astro.build)
-- TypeScript 6.0.3（strict）
-- [Tailwind CSS 4.3.3](https://tailwindcss.com)
-- [Bun](https://bun.sh) 包管理与运行
-
-### 本地运行
-
-```bash
-bun install
-bun run dev        # 开发服务器
-bun run build      # 生产构建（输出 dist/）
-bun run preview    # 预览构建结果
-bunx astro check   # 类型检查
-```
-
-推送至 `main` 分支后，GitHub Actions 会自动构建并部署到 GitHub Pages（自定义域：opencv.ndjp.net）。

@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const links = [
+  { href: '/', label: '首页' },
+  { href: '/intro', label: '简介' },
+  { href: '/install', label: '安装' },
+  { href: '/modules', label: '模块' },
+  { href: '/tutorials', label: '教程' },
+  { href: '/examples', label: '示例' },
+];
+---
+
+<BaseLayout title="页面未找到" description="请求的页面不存在，返回 OpenCV 中文文档首页或浏览主要栏目。">
+  <section class="mx-auto max-w-6xl px-4 py-20 md:py-28">
+    <p class="font-mono text-sm text-accent">404</p>
+    <h1 class="mt-3 text-3xl font-black tracking-tight text-ink md:text-4xl">页面未找到</h1>
+    <p class="mt-4 max-w-[60ch] leading-relaxed text-muted">
+      请求的地址不存在或已移动。可以从下面的入口继续浏览，或返回首页。
+    </p>
+    <ul class="mt-8 flex flex-wrap gap-2">
+      {links.map((l) => <li><a href={l.href} class="anchor-pill">{l.label}</a></li>)}
+    </ul>
+  </section>
+</BaseLayout>

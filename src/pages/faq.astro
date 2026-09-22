@@ -126,6 +126,7 @@ const categories = ['全部', '基础', '安装', 'API', '数据类型', 'DNN', 
           <button
             type="button"
             data-faq-filter={c}
+            aria-pressed={i === 0}
             class:list={['faq-filter anchor-pill', i === 0 && 'is-active']}
           >
             {c}
@@ -170,6 +171,7 @@ const categories = ['全部', '基础', '安装', 'API', '数据类型', 'DNN', 
       const cat = btn.dataset.faqFilter ?? '全部';
       buttons.forEach((b) => {
         b.classList.toggle('is-active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
       });
       let visible = 0;
       items.forEach((item) => {

@@ -1,0 +1,216 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface Row {
+  macro: string;
+  value: string;
+  cpp: string;
+  bits: string;
+  range: string;
+  since?: string;
+  use: string;
+}
+
+const depthTypes: Row[] = [
+  { macro: 'CV_8U', value: '0', cpp: 'uint8_t / uchar', bits: '8 位无符号', range: '0 ~ 255', use: '默认图像像素深度（灰度/彩色）' },
+  { macro: 'CV_8S', value: '1', cpp: 'int8_t / schar', bits: '8 位有符号', range: '-128 ~ 127', use: '部分掩码、标签图' },
+  { macro: 'CV_16U', value: '2', cpp: 'uint16_t / ushort', bits: '16 位无符号', range: '0 ~ 65535', use: '16 位图像、深度图' },
+  { macro: 'CV_16S', value: '3', cpp: 'int16_t / short', bits: '16 位有符号', range: '-32768 ~ 32767', use: '光流中间结果、梯度' },
+  { macro: 'CV_32S', value: '4', cpp: 'int32_t / int', bits: '32 位有符号', range: '±2.1×10⁹', use: '连通域标签、计数' },
+  { macro: 'CV_32F', value: '5', cpp: 'float', bits: '32 位浮点', range: '±3.4×10³⁸', use: '绝大多数算法默认浮点类型' },
+  { macro: 'CV_64F', value: '6', cpp: 'double', bits: '64 位浮点', range: '±1.7×10³⁰⁸', use: '标定、几何精确计算' },
+  { macro: 'CV_16F', value: '7', cpp: 'hfloat (float16)', bits: '16 位半精度', range: 'IEEE 754 half', use: 'GPU/DNN 低精度推理' },
+  { macro: 'CV_16BF', value: '8', cpp: 'bfloat', bits: '16 位脑浮点', range: 'bfloat16', use: 'DNN 训练/推理量化', since: '5.0 新增' },
+  { macro: 'CV_Bool', value: '9', cpp: 'bool', bits: '布尔', range: 'true / false', use: '布尔掩码、逻辑运算结果', since: '5.0 新增' },
+  { macro: 'CV_64U', value: '10', cpp: 'uint64_t', bits: '64 位无符号', range: '0 ~ 1.8×10¹⁹', use: '大范围计数/位集合', since: '5.0 新增' },
+  { macro: 'CV_64S', value: '11', cpp: 'int64_t', bits: '64 位有符号', range: '±9.2×10¹⁸', use: '大范围整数运算', since: '5.0 新增' },
+  { macro: 'CV_32U', value: '12', cpp: 'uint32_t', bits: '32 位无符号', range: '0 ~ 4.3×10⁹', use: '无符号计数、位图', since: '5.0 新增' },
+];
+
+const multiChannel = [
+  { t: '常量形式（1~4 通道）', c: 'CV_8UC1  CV_8UC3  CV_16UC1  CV_32FC2  CV_64FC4 …' },
+  { t: '宏形式（任意通道数）', c: 'CV_8UC(n)   CV_32FC(n)' },
+  { t: '运行时构造', c: 'CV_MAKETYPE(CV_8U, n)  // depth + ((n-1) << CV_CN_SHIFT)' },
+  { t: '通道数上限', c: 'CV_CN_MAX = 128' },
+];
+
+const examples = [
+  { t: '3×3 单通道浮点矩阵', c: 'cv::Mat mtx(3, 3, CV_32F);' },
+  { t: '10×1 双通道（复数向量）', c: 'cv::Mat cmtx(10, 1, CV_64FC2);' },
+  { t: '1920×1080 彩色图像', c: 'cv::Mat img(cv::Size(1920, 1080), CV_8UC3);' },
+  { t: '同尺寸单通道灰度图', c: 'cv::Mat gray(img.size(), CV_MAKETYPE(img.depth(), 1));' },
+  { t: 'Python / NumPy 等价', c: 'np.zeros((1080, 1920, 3), dtype=np.uint8)  # CV_8UC3' },
+];
+
+const supportNotes = [
+  { m: 'cv::add 等基础算术', s: '全部类型', level: 'full' },
+  { m: '颜色空间转换 cvtColor', s: '8U / 16U / 32F', level: 'mid' },
+  { m: '线性代数与多数 ML 算法', s: '仅浮点', level: 'low' },
+  { m: '人脸检测（Haar/DNN）', s: '8 位灰度或彩色', level: 'low' },
+  { m: '滤波、形态学', s: '8U / 16U / 32F 常见', level: 'mid' },
+];
+
+const concepts = [
+  {
+    t: '饱和运算（Saturation）',
+    d: '写入 8/16 位图像时，将结果裁剪到合法范围：I = min(max(round(r), 0), 255)。C++ 中用 saturate_cast<uchar>(r)；SIMD 指令（paddusb、packuswb）保证一致行为。32 位整数结果不饱和。',
+  },
+  {
+    t: '深度 × 通道 = 类型',
+    d: 'Mat.type() 由深度（低 3~5 位）与通道数共同决定。#CV_32FC2 == CV_MAKETYPE(CV_32F, 2)；CV_MAT_DEPTH(depth) 取最低 CV_CN_SHIFT（当前为 5）位。',
+  },
+  {
+    t: '运行时分发而非模板',
+    d: '为控制编译时间并便于 Python/Java 绑定，OpenCV 主体使用多态与运行时分发；仅在像素访问、saturate_cast、Ptr 等处使用轻量模板。',
+  },
+];
+
+const apiRefs = [
+  { n: 'Mat::type()', d: '返回完整类型（深度 + 通道）' },
+  { n: 'Mat::depth()', d: '返回深度宏（CV_8U 等）' },
+  { n: 'Mat::channels()', d: '返回通道数' },
+  { n: 'CV_MAT_DEPTH(type)', d: '从类型中提取深度' },
+  { n: 'CV_CN_MAX', d: '最大通道数（128）' },
+  { n: 'saturate_cast<T>(v)', d: '带饱和的类型转换' },
+];
+
+const levelStyle = {
+  full: 'bg-accent-soft text-accent border-accent/30',
+  mid: 'bg-raised text-ink border-line',
+  low: 'bg-raised text-faint border-line',
+} as const;
+---
+
+<BaseLayout title="数据类型" description="OpenCV 像素数据类型完整参考：CV_8U、CV_32F、CV_16BF、多通道宏与饱和运算。">
+  <PageHero
+    title="像素数据类型参考"
+    lead="OpenCV 只接受一组<strong class='text-ink'>固定的基元类型</strong>：数组元素必须是下表类型之一，或由相同类型元素组成的元组（多通道数组）。更复杂的元素类型无法构造或处理。本页对应官方 Introduction 中「Fixed Pixel Types」章节，含 5.0 新增类型。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <!-- Depth table -->
+    <section>
+      <h2 class="section-title">深度类型一览</h2>
+      <div class="mt-5 overflow-x-auto rounded-xl">
+        <table class="doc-table min-w-[860px]">
+          <thead>
+            <tr>
+              <th>宏</th>
+              <th>值</th>
+              <th>C++ 类型</th>
+              <th>位宽</th>
+              <th>范围</th>
+              <th>典型用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              depthTypes.map((r) => (
+                <tr class:list={[r.since && 'bg-accent-soft/50']}>
+                  <td>
+                    <code class="code-inline font-semibold text-accent">{r.macro}</code>
+                  </td>
+                  <td class="font-mono text-xs text-faint">{r.value}</td>
+                  <td class="font-mono text-xs">{r.cpp}</td>
+                  <td class="text-xs">{r.bits}</td>
+                  <td class="text-xs text-muted">{r.range}</td>
+                  <td class="text-xs">
+                    {r.use}
+                    {r.since && (
+                      <span class="ml-2 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-ink">{r.since}</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Multi channel + construction examples -->
+    <section class="mt-14 grid gap-8 lg:grid-cols-2">
+      <div>
+        <h2 class="section-title">多通道（n 通道）类型</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            multiChannel.map((m) => (
+              <li class="card p-4">
+                <div class="text-sm font-medium text-ink">{m.t}</div>
+                <code class="mt-1 block font-mono text-xs text-accent">{m.c}</code>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div>
+        <h2 class="section-title">构造示例</h2>
+        <pre class="codeblock mt-5"><code>{examples.map((e) => `// ${e.t}\n${e.c}`).join('\n\n')}</code></pre>
+      </div>
+    </section>
+
+    <!-- Concepts -->
+    <section class="mt-14">
+      <h2 class="section-title">相关概念</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-3">
+        {
+          concepts.map((c) => (
+            <div class="card p-5">
+              <h3 class="font-semibold text-ink">{c.t}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{c.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Support matrix -->
+    <section class="mt-14">
+      <h2 class="section-title">函数支持的类型子集</h2>
+      <p class="mt-2 max-w-[65ch] text-sm text-muted">算法越复杂，通常支持的类型子集越小（由实际需求决定，未来可扩展）。</p>
+      <div class="mt-5 overflow-x-auto rounded-xl">
+        <table class="doc-table min-w-[560px]">
+          <thead>
+            <tr>
+              <th>功能</th>
+              <th>支持类型</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              supportNotes.map((s) => (
+                <tr>
+                  <td class="font-semibold text-ink">{s.m}</td>
+                  <td>
+                    <span class:list={['rounded-full border px-2.5 py-0.5 text-xs font-medium', levelStyle[s.level as keyof typeof levelStyle]]}>
+                      {s.s}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- API cheatsheet -->
+    <section class="mt-14 rounded-xl bg-codebg p-6">
+      <h2 class="font-bold text-codeink">速查：常用 API</h2>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        {
+          apiRefs.map((a) => (
+            <div class="flex items-baseline gap-3 rounded-lg bg-codeline/50 p-3">
+              <code class="font-mono text-xs text-accent">{a.n}</code>
+              <span class="text-xs text-muted">{a.d}</span>
+            </div>
+          ))
+        }
+      </div>
+      <p class="mt-4 text-xs text-faint">
+        来源：docs.opencv.org/5.0 Introduction，Fixed Pixel Types / Saturation Arithmetics
+      </p>
+    </section>
+  </div>
+</BaseLayout>

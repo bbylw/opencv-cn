@@ -1,0 +1,195 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const methods = [
+  {
+    id: 'pip',
+    title: 'pip 安装 Python 绑定（最快上手）',
+    pros: '适合 Python 原型开发，无需编译。',
+    steps: [
+      `# 稳定版\npip install opencv-python`,
+      `# 含 contrib 额外模块\npip install opencv-contrib-python`,
+      `# 无 GUI 支持（服务器/无显示环境）\npip install opencv-python-headless`,
+    ],
+    verify: `python -c "import cv2; print(cv2.__version__)"`,
+  },
+  {
+    id: 'prebuilt',
+    title: '预构建二进制（C++ 项目）',
+    pros: '通过安装器、apt/Homebrew/vcpkg 安装后，用 CMake 自动链接。',
+    steps: [
+      `# CMakeLists.txt\ncmake_minimum_required(VERSION 3.22)\nproject(OpenCV5_Local_Project)\n\nset(CMAKE_CXX_STANDARD 17)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\n\nfind_package(OpenCV 5.0 REQUIRED)\nmessage(STATUS "Found OpenCV version: \${OpenCV_VERSION}")\n\nadd_executable(app main.cpp)\ntarget_link_libraries(app PRIVATE \${OpenCV_LIBS})`,
+      `# 构建运行\nmkdir build && cd build\ncmake ..\ncmake --build .\n./app`,
+    ],
+    verify: `# 若 CMake 找不到安装位置：\ncmake -DOpenCV_DIR=/path/to/opencv/build ..`,
+  },
+  {
+    id: 'gpp',
+    title: 'g++ 直接编译（Linux / macOS）',
+    pros: '单条命令，无需生成构建文件。',
+    steps: [
+      `# 使用 pkg-config\ng++ -std=c++17 main.cpp -o app \\\n  $(pkg-config --cflags --libs opencv5)`,
+      `# 显式指定路径（自定义构建）\ng++ -std=c++17 main.cpp -o app \\\n  -I/usr/local/include/opencv5 \\\n  -L/usr/local/lib \\\n  -lopencv_core -lopencv_imgcodecs \\\n  -lopencv_highgui -lopencv_imgproc`,
+    ],
+    verify: `# 注意：5.0 已无 -lopencv_calib3d\n# 请按需链接：-lopencv_geometry -lopencv_calib\n#             -lopencv_stereo -lopencv_ptcloud`,
+  },
+  {
+    id: 'source',
+    title: '从源码构建',
+    pros: '需要自定义模块、启用 CUDA/OpenVINO 等可选功能时使用。',
+    steps: [
+      `git clone https://github.com/opencv/opencv.git\ncd opencv && git checkout 5.0.0\n\n# 可选：额外模块\ngit clone https://github.com/opencv/opencv_contrib.git`,
+      `mkdir build && cd build\ncmake -DCMAKE_BUILD_TYPE=Release \\\n  -DBUILD_TESTS=OFF \\\n  -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules \\\n  ..\ncmake --build . --parallel`,
+      `# 安装（Linux 默认 /usr/local）\nsudo cmake --install .`,
+    ],
+    verify: `cmake -LH | grep -i opencv  # 查看可用开关\n# 常用开关：WITH_CUDA / WITH_OPENCL / BUILD_opencv_python3`,
+  },
+  {
+    id: 'mobile',
+    title: '移动端与平台包',
+    pros: 'Android Studio / CocoaPods / 系统包管理器。',
+    steps: [
+      `# Ubuntu / Debian\nsudo apt install libopencv-dev python3-opencv`,
+      `# macOS\nbrew install opencv`,
+      `# vcpkg (跨平台 C++)\nvcpkg install opencv5`,
+      `# Windows (vcpkg)\nvcpkg install opencv5:x64-windows`,
+    ],
+    verify: `pkg-config --modversion opencv5`,
+  },
+];
+
+const pitfalls = [
+  {
+    t: '"OpenCV 5.0 requires C++17"',
+    d: '工具链回退到了旧标准。g++ 加 -std=c++17；CMake 在 find_package 之前设置 CMAKE_CXX_STANDARD 17。',
+  },
+  {
+    t: 'CMake 提示找不到 package 配置文件',
+    d: '显式传入路径：cmake -DOpenCV_DIR=/path/to/opencv/build/ ..',
+  },
+  {
+    t: '链接 -lopencv_calib3d 失败',
+    d: '5.0 已将 calib3d 拆分为 geometry、calib、stereo、ptcloud，请链接对应新库。',
+  },
+  {
+    t: 'Python import cv2 失败',
+    d: '自定义构建需设置 PYTHONPATH 指向 build/lib（或 build/lib/python3），再用 python -c "import cv2; print(cv2.__version__)" 验证。',
+  },
+  {
+    t: '运行时找不到动态库',
+    d: 'Linux/macOS 设置 LD_LIBRARY_PATH / DYLD_LIBRARY_PATH；或配置 ldconfig 缓存；Windows 将 bin 目录加入 PATH。',
+  },
+];
+
+const matrix = [
+  { os: 'Windows', pkg: '官方预编译包 / vcpkg / 源码', py: 'pip install opencv-python', note: '需 MSVC 2019+ 与 C++17' },
+  { os: 'Ubuntu/Debian', pkg: 'apt install libopencv-dev', py: 'pip 或 apt python3-opencv', note: '注意 apt 版本可能滞后于 5.0' },
+  { os: 'Fedora/RHEL', pkg: 'dnf install opencv-devel', py: 'pip install opencv-python', note: '' },
+  { os: 'macOS', pkg: 'brew install opencv', py: 'pip install opencv-python', note: 'Apple Silicon 原生支持' },
+  { os: 'Android', pkg: 'SDK Manager 中的 OpenCV SDK / Maven', py: '不适用', note: '通过 Java/Kotlin 或 NDK 使用' },
+  { os: 'iOS', pkg: 'OpenCV iOS framework', py: '不适用', note: '从源码或官方框架集成' },
+  { os: '浏览器', pkg: 'OpenCV.js（WASM）', py: '不适用', note: 'opencvs.org / 构建脚本生成' },
+];
+
+const requirements = [
+  { v: 'C++17+', k: '编译标准（强制）' },
+  { v: 'Python 3.6+', k: '不再支持 Python 2' },
+  { v: 'CMake 3.22+', k: '官方教程推荐版本' },
+];
+---
+
+<BaseLayout title="安装" description="OpenCV 5.0 安装指南：pip、CMake、g++、源码构建与常见问题。">
+  <PageHero
+    title="安装与配置"
+    lead="本页整理自官方 <a class='text-accent hover:underline' href='https://docs.opencv.org/5.0/tutorials/introduction/using_prebuilt_binaries/using_prebuilt_binaries.html' target='_blank' rel='noopener'>「使用预构建二进制」教程</a>与社区常见做法。兼容性要求：OpenCV &gt;= 5.0、C++17、Python &gt;= 3.6。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <dl class="grid gap-3 sm:grid-cols-3">
+      {
+        requirements.map((r) => (
+          <div class="card p-4 text-center">
+            <dd class="text-lg font-bold text-accent">{r.v}</dd>
+            <dt class="mt-1 text-xs text-faint">{r.k}</dt>
+          </div>
+        ))
+      }
+    </dl>
+
+    <nav class="mt-10 flex flex-wrap gap-2" aria-label="安装方式">
+      {
+        methods.map((m) => (
+          <a href={`#${m.id}`} class="anchor-pill">
+            {m.title.split('（')[0]}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="mt-8 space-y-6">
+      {
+        methods.map((m, idx) => (
+          <section id={m.id} class="card scroll-mt-24 p-6">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">{idx + 1}</span>
+              <h2 class="text-lg font-bold tracking-tight text-ink">{m.title}</h2>
+            </div>
+            <p class="mt-2 text-sm text-muted">{m.pros}</p>
+            <div class="mt-4 space-y-3">
+              {m.steps.map((step) => (
+                <pre class="codeblock"><code>{step}</code></pre>
+              ))}
+            </div>
+            <div class="mt-4 rounded-lg border border-accent/30 bg-accent-soft p-3">
+              <div class="text-xs font-semibold text-ink">验证 / 注意</div>
+              <pre class="mt-1 overflow-x-auto font-mono text-xs text-muted"><code>{m.verify}</code></pre>
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <section class="mt-14">
+      <h2 class="section-title">平台速查表</h2>
+      <div class="mt-5 overflow-x-auto rounded-xl">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>平台</th>
+              <th>C++ 安装</th>
+              <th>Python</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              matrix.map((row) => (
+                <tr>
+                  <td class="font-semibold text-ink">{row.os}</td>
+                  <td>{row.pkg}</td>
+                  <td class="font-mono text-xs">{row.py}</td>
+                  <td class="text-muted">{row.note}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="mt-14">
+      <h2 class="section-title">常见问题排查</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          pitfalls.map((p) => (
+            <div class="card p-5">
+              <h3 class="font-mono text-sm font-semibold text-accent">{p.t}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{p.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</BaseLayout>

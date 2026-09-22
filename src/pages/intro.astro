@@ -1,0 +1,173 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const concepts = [
+  {
+    id: 'namespace',
+    title: 'cv 命名空间',
+    body: '所有 OpenCV 类与函数均位于 cv 命名空间中。使用 cv:: 前缀或 using namespace cv; 访问。若外部名称与 STL 或其他库冲突，请使用显式命名空间限定符解决冲突。',
+    code: `#include "opencv2/core.hpp"\nusing namespace cv;\n\nMat H = findHomography(points1, points2, RANSAC, 5);\n\n// 名称冲突时显式限定\nMat a(100, 100, CV_32F);\ncv::log(a, a);`,
+  },
+  {
+    id: 'memory',
+    title: '自动内存管理',
+    body: 'cv::Mat 等数据结构带有析构函数，通过引用计数管理底层缓冲区：复制 Mat 只增加引用计数而不复制数据；引用计数归零时才释放缓冲区。clone() 创建完整拷贝。用户自定义类型可用类似 std::shared_ptr 的 cv::Ptr（推荐 makePtr<T>）。',
+    code: `// 创建 8MB 大矩阵\nMat A(1000, 1000, CV_64F);\n\n// 仅为同一矩阵创建新头文件；瞬时操作，与矩阵大小无关\nMat B = A;\n\n// 为 A 的第 3 行创建头文件；同样不复制数据\nMat C = B.row(3);\n\n// 真正的数据拷贝\nMat D = B.clone();\n\n// 将 B 第 5 行拷入 C（即 A 的第 5 行 → A 的第 3 行）\nB.row(5).copyTo(C);\n\n// A 与 D 共享数据；修改 A 后 B、C 引用的仍是旧版本\nA = D;\n\n// B 变为空矩阵（不再引用缓冲区）\nB.release();\n\n// 最终深拷贝 C；大矩阵不再被引用而释放\nC = C.clone();`,
+  },
+  {
+    id: 'output',
+    title: '输出数据自动分配',
+    body: '函数通常会根据输入数组的大小与类型自动分配或重新分配输出数组。核心技术是 Mat::create：若数组已具备所需大小与类型则不做任何事，否则先释放旧数据再分配新缓冲区。循环中帧分辨率不变时，数组只在首次分配。例外：mixChannels、RNG::fill 等需提前分配。',
+    code: `VideoCapture cap(0);\nMat frame, edges;\nnamedWindow("edges", WINDOW_AUTOSIZE);\nfor (;;) {\n    cap >> frame;   // 分辨率已知 → frame 自动分配\n    cvtColor(frame, edges, COLOR_BGR2GRAY); // edges 自动分配\n    GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);\n    Canny(edges, edges, 0, 30, 3);\n    imshow("edges", edges);\n    if (waitKey(30) >= 0) break;\n}`,
+  },
+  {
+    id: 'saturation',
+    title: '饱和运算',
+    body: '图像像素常以 8/16 位紧凑编码，运算结果可能超出取值范围。OpenCV 使用饱和运算裁剪到合法范围（如 0..255），避免回绕造成视觉伪影。公式：I(x,y) = min(max(round(r), 0), 255)。32 位整数结果不应用饱和。C++ 中通过 cv::saturate_cast<> 实现，SIMD 指令（paddusb、packuswb）保证一致行为。',
+    code: `I.at<uchar>(y, x) = saturate_cast<uchar>(r);\n// 等价于：I(x,y) = min(max(round(r), 0), 255)\n// 8 位有符号、16 位有符号/无符号类型同理`,
+  },
+  {
+    id: 'types',
+    title: '固定像素类型与有限模板',
+    body: '为控制编译时间、代码体积并便于 Python/Java 等绑定，OpenCV 基于多态与运行时分发，仅在像素访问、saturate_cast、cv::Ptr 等场景使用轻量模板。数组元素必须属于固定基本类型集合（8/16/32/64 位整数、浮点、布尔），或由同类型元素组成的多通道数组（最多 128 通道）。5.0 新增 CV_16BF、CV_32U、CV_64U、CV_64S、CV_Bool，并支持 0D/1D 数组。完整列表见数据类型页。',
+    code: `#define CV_8U   0\n#define CV_8S   1\n#define CV_16U  2\n#define CV_16S  3\n#define CV_32S  4\n#define CV_32F  5\n#define CV_64F  6\n#define CV_16F  7\n#define CV_16BF 8   // 5.0 新增\n#define CV_Bool 9   // 5.0 新增\n#define CV_64U  10  // 5.0 新增\n#define CV_64S  11  // 5.0 新增\n#define CV_32U  12  // 5.0 新增\n\nMat mtx(3, 3, CV_32F);                    // 3×3 浮点矩阵\nMat cmtx(10, 1, CV_64FC2);                // 10×1 双通道\nMat img(Size(1920, 1080), CV_8UC3);       // 彩色图像`,
+  },
+  {
+    id: 'io',
+    title: 'InputArray 与 OutputArray',
+    body: '许多函数既可接受 cv::Mat，也可接受 std::vector<>（如点集）、cv::Matx<>（如 3×3 单应矩阵）等。为避免 API 重复，OpenCV 引入代理类：InputArray 用于只读输入，OutputArray 用于输出。通常无需关心这些中间类型，也无需显式声明其变量，直接传入 Mat、vector、Matx、Vec 或 Scalar 即可。可选数组传入 cv::noArray()。',
+    code: `// 函数签名使用代理类型\nvoid someFunc(InputArray src, OutputArray dst);\n\n// 实际调用可传入多种容器\nsomeFunc(mat, result);\nsomeFunc(vector<Point2f>{...}, homography);`,
+  },
+  {
+    id: 'errors',
+    title: '错误处理',
+    body: 'OpenCV 使用异常表示关键错误。cv::Exception 派生自 std::exception，可用标准 C++ 机制优雅处理。常用抛出方式：CV_Error(errcode, description)、CV_Error_(errcode, (printf格式))、CV_Assert(condition)；性能关键代码用仅在 Debug 配置保留的 CV_DbgAssert。输入格式正确但算法无法成功时（如优化未收敛），通常返回特殊错误码（多为布尔）。由于自动内存管理，出错时中间缓冲区自动释放，只需 try/catch。',
+    code: `try {\n    // 调用 OpenCV\n} catch (const cv::Exception& e) {\n    std::cout << "exception caught: " << e.what() << std::endl;\n}\n\n// 抛出示例\nCV_Error(Error::StsBadArg, "unsupported size");\nCV_Assert(src.type() == CV_32F);`,
+  },
+  {
+    id: 'threads',
+    title: '多线程与可重入',
+    body: '当前 OpenCV 实现完全可重入：不同线程可调用同一函数，或调用不同类实例的同一方法。同一 Mat 也可在不同线程中使用，因为引用计数操作采用架构相关的原子指令。注意：对同一块像素数据的并发写入仍需要应用层同步。',
+    code: `// 引用计数为原子操作 → 跨线程共享 Mat 头文件是安全的\n// 多线程各自处理不同 ROI 时通常无需额外加锁`,
+  },
+  {
+    id: 'universals',
+    title: 'Universal Intrinsics（跨平台 SIMD）',
+    body: '5.0 升级到 Universal Intrinsics 2.0，用统一的内在函数接口编写一次 SIMD 代码，自动映射到 SSE/AVX/NEON/SVE/RISC-V 等指令集。图像 warp 等热点路径由此获得 10% 到 300%+ 的加速。应用层通常无需直接使用该接口，但了解它有助于理解性能特征。另有 HAL（硬件加速层）供芯片厂商注入定制实现。',
+    code: `// 应用代码无需改动，编译期自动选择最优路径\n// 后端：SIMD (SSE/AVX/NEON/SVE/RISC-V)、OpenCL、CUDA、Vulkan`,
+  },
+];
+
+const stats = [
+  { k: '最低 C++ 标准', v: 'C++17' },
+  { k: 'Python 要求', v: '3.6+' },
+  { k: 'C API', v: '已移除' },
+  { k: '接口语言', v: 'C++ / Python / Java / JS' },
+];
+
+const moduleRows = [
+  ['core', '核心功能：多维数组 Mat 及基础操作'],
+  ['imgproc', '图像处理：滤波、几何变换、颜色转换、直方图'],
+  ['imgcodecs', '图像文件读写'],
+  ['videoio', '视频捕捉与编解码接口'],
+  ['highgui', '简单 GUI 能力'],
+  ['video', '运动估计、背景减除、目标跟踪'],
+  ['3d', '多视图几何、位姿估计、3D 重建'],
+  ['features', '特征检测、描述与匹配'],
+  ['objdetect', '预定义类别对象检测（人脸、眼睛等）'],
+  ['calib / stereo / geometry / ptcloud', '原 calib3d 拆分'],
+  ['dnn', '深度神经网络推理'],
+  ['photo / stitching / flann', '计算摄影、拼接、近邻搜索'],
+];
+---
+
+<BaseLayout title="简介" description="OpenCV 5.0 简介：模块结构、版本要点与核心 API 概念的中文说明。">
+  <PageHero
+    title="简介"
+    lead="OpenCV（Open Source Computer Vision Library：https://opencv.org）是一个开源库，包含数百种计算机视觉算法。本页描述当前的 <strong class='text-ink'>C++ API</strong>（由 OpenCV 2.x 演进而来），而非基于 C 的 1.x API（C API 已弃用，并自 2.4 起不再用「C」编译器测试；5.0 已完全移除）。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <!-- 5.0 key points -->
+    <div class="rounded-xl border border-accent/30 bg-accent-soft p-5">
+      <h2 class="font-bold text-ink">OpenCV 5.0 要点</h2>
+      <p class="mt-2 text-sm leading-relaxed text-muted">
+        在 4.x 基础上的重大版本：最低 C++17；不再支持 Python 2（需 Python 3.6+）；
+        完全移除遗留 C API；新增 CV_16BF、CV_32U、CV_64U、CV_64S、CV_Bool 数据类型与 0D/1D 数组支持；
+        原 calib3d 拆分为 geometry、calib、stereo、ptcloud；新一代 DNN 引擎 ONNX 覆盖率超过 80%（并集成 ONNX Runtime、模型托管于 Hugging Face）；
+        Universal Intrinsics 2.0（SSE/AVX/NEON/SVE/RISC-V）、Vulkan 计算支持；图像 warp 加速 10%~300%+；USAC 成为鲁棒估计默认框架。
+      </p>
+    </div>
+
+    <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {
+        stats.map((s) => (
+          <div class="card p-4 text-center">
+            <dt class="text-[11px] text-faint">{s.k}</dt>
+            <dd class="mt-1 text-sm font-bold text-ink">{s.v}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <!-- Module structure -->
+    <section class="mt-14">
+      <h2 class="section-title">模块结构</h2>
+      <p class="mt-2 max-w-[65ch] text-sm text-muted">
+        OpenCV 采用模块化设计，安装包包含多个共享或静态库（详见
+        <a href="/modules" class="text-accent hover:underline">核心模块</a>）：
+      </p>
+      <ul class="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          moduleRows.map(([name, desc]) => (
+            <li class="rounded-lg bg-raised px-3 py-2.5 text-sm">
+              <strong class="font-mono text-accent">{name}</strong>
+              <span class="text-muted">，{desc}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-3 text-sm text-faint">另有 FLANN、Google Test 封装、Python 绑定等辅助模块。</p>
+    </section>
+
+    <!-- Core API concepts -->
+    <section class="mt-14">
+      <h2 class="section-title">核心 API 概念</h2>
+      <nav class="mt-4 flex flex-wrap gap-2" aria-label="概念目录">
+        {
+          concepts.map((c) => (
+            <a href={`#${c.id}`} class="anchor-pill">
+              {c.title}
+            </a>
+          ))
+        }
+      </nav>
+      <div class="mt-6 space-y-6">
+        {
+          concepts.map((c) => (
+            <article id={c.id} class="card scroll-mt-24 p-6">
+              <h3 class="text-lg font-bold tracking-tight text-ink">{c.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{c.body}</p>
+              <pre class="codeblock mt-4"><code>{c.code}</code></pre>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Next steps -->
+    <nav class="mt-14 flex flex-wrap gap-3" aria-label="继续阅读">
+      <a href="/datatypes" class="btn-primary">数据类型完整参考</a>
+      <a href="/install" class="btn-secondary">安装指南</a>
+      <a href="/examples" class="btn-secondary">示例代码</a>
+    </nav>
+
+    <p class="mt-12 text-sm text-faint">
+      来源：
+      <a href="https://docs.opencv.org/5.0/intro.html" target="_blank" rel="noopener" class="text-accent hover:underline">
+        docs.opencv.org/5.0/intro.html
+      </a>
+    </p>
+  </div>
+</BaseLayout>

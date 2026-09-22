@@ -1,0 +1,183 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const faqs: { q: string; a: string; cat: string }[] = [
+  {
+    cat: '基础',
+    q: 'OpenCV 是什么？',
+    a: 'OpenCV（Open Source Computer Vision Library）是一个开源计算机视觉与机器学习软件库，包含 2,500 多个优化算法，可用于人脸检测、目标识别、视频中的人体动作分类、相机与物体运动跟踪、提取 3D 模型、拼接图像生成高分辨率全景图等。提供 C++、Python、Java、JavaScript 接口，支持 Windows/Linux/macOS/Android/iOS，并可通过 SIMD、CUDA、OpenCL、Vulkan 加速。',
+  },
+  {
+    cat: '基础',
+    q: 'OpenCV 5.0 与 4.x 有什么区别？',
+    a: 'OpenCV 5.0 是在 4.x 基础上的重大版本：最低要求 C++17；不再支持 Python 2（需 Python 3.6+）；完全移除遗留 C API；新增 CV_16BF、CV_32U、CV_64U、CV_64S、CV_Bool 等数据类型与 0D/1D 数组支持；原 calib3d 模块拆分为 geometry、calib、stereo、ptcloud；新一代 DNN 引擎 ONNX 覆盖率超 80%；图像 warp 加速 10%~300%+；USAC 成为鲁棒估计默认框架；Universal Intrinsics 2.0 支持 SVE/RISC-V。',
+  },
+  {
+    cat: '基础',
+    q: 'OpenCV 支持哪些编程语言？',
+    a: '提供 C++、Python、Java 与 JavaScript（OpenCV.js）接口。注意 5.0 起不再支持 Python 2。C++ 是原生实现语言，性能最佳；Python 适合快速原型；Java 常用于 Android；OpenCV.js 可在浏览器中通过 WebAssembly 运行。',
+  },
+  {
+    cat: '基础',
+    q: 'OpenCV 可以运行在哪些平台上？',
+    a: 'Windows、Linux、macOS、Android 与 iOS。计算可通过 CPU（SIMD：SSE/AVX/NEON/SVE/RISC-V）、CUDA、OpenCL 与 Vulkan 加速。',
+  },
+  {
+    cat: '安装',
+    q: '最简单的安装方式是什么？',
+    a: 'Python 用户：pip install opencv-python（需要额外模块时用 opencv-contrib-python；服务器无显示环境用 opencv-python-headless）。C++ 用户：使用系统包管理器（apt/brew/vcpkg）或官方预构建二进制，通过 CMake 的 find_package(OpenCV) 链接。详见站内安装指南。',
+  },
+  {
+    cat: '安装',
+    q: '编译时报 "OpenCV 5.0 requires C++17" 怎么办？',
+    a: '工具链回退到了旧的 C++ 标准。g++ 请添加 -std=c++17；CMake 请在 find_package(OpenCV) 之前设置 set(CMAKE_CXX_STANDARD 17) 与 set(CMAKE_CXX_STANDARD_REQUIRED ON)。MSVC 请启用 /std:c++17 或更高。',
+  },
+  {
+    cat: '安装',
+    q: '链接 -lopencv_calib3d 失败？',
+    a: '5.0 已将 calib3d 拆分为四个模块：geometry、calib、stereo、ptcloud。请改为链接 -lopencv_geometry、-lopencv_calib、-lopencv_stereo、-lopencv_ptcloud 中你需要的库，或直接使用 ${OpenCV_LIBS} 变量一次性链接全部。',
+  },
+  {
+    cat: 'API',
+    q: 'cv::Mat 的数据会被意外复制吗？',
+    a: '默认不会。Mat 使用引用计数：复制 Mat 或创建子矩阵头（如 row()）只增加引用计数，不复制数据；只有调用 clone() 或 copyTo() 才会进行实际数据拷贝。当引用计数归零时缓冲区才被释放。类似地，cv::Ptr 类似 std::shared_ptr 管理对象生命周期。',
+  },
+  {
+    cat: 'API',
+    q: '输出参数为什么不需要手动分配？',
+    a: 'OpenCV 大多数函数会根据输入数组的大小与类型自动分配或重新分配输出数组（通过 Mat::create）。若数组已具备所需大小与类型则不做任何事，否则先释放旧数据再分配新缓冲区。例外包括 mixChannels、RNG::fill 等，需要你提前分配输出。',
+  },
+  {
+    cat: 'API',
+    q: '什么是饱和运算？什么时候不生效？',
+    a: '写入 8/16 位图像时，运算结果会被裁剪到合法范围（如 0..255），避免回绕产生视觉伪影。C++ 中用 saturate_cast<T> 实现，SIMD 指令保证一致行为。注意：当结果为 32 位整数时不做饱和。',
+  },
+  {
+    cat: 'API',
+    q: 'InputArray / OutputArray 是什么？',
+    a: '这是避免 API 重复的代理类。函数参数声明为 InputArray（只读输入）或 OutputArray（输出）时，实际可传入 cv::Mat、std::vector<>、cv::Matx<>、cv::Vec<> 或 cv::Scalar。通常无需关心这些中间类型；可选数组可传 cv::noArray()。',
+  },
+  {
+    cat: 'API',
+    q: '如何处理 OpenCV 抛出的异常？',
+    a: '关键错误通过异常表示（cv::Exception 继承自 std::exception），可用 try/catch 捕获。常用抛出宏：CV_Error(errcode, description)、CV_Assert(condition)；性能关键代码可用仅在 Debug 保留的 CV_DbgAssert。算法逻辑失败（如优化未收敛）通常返回布尔错误码而非异常。由于自动内存管理，出错时中间缓冲区也会自动释放。',
+  },
+  {
+    cat: 'API',
+    q: '同一个 Mat 能在多线程中使用吗？',
+    a: '可以。当前 OpenCV 实现完全可重入：不同线程可调用同一函数或不同实例的同一方法；同一 Mat 也可跨线程共享，因为引用计数操作使用架构相关的原子指令。但对同一 Mat 数据的并发写入仍需你自己同步。',
+  },
+  {
+    cat: '数据类型',
+    q: '为什么我的函数报不支持的类型？',
+    a: 'OpenCV 只支持固定的基元类型集合（8/16/32/64 位整数、浮点、布尔及多通道元组）。每个函数只支持该集合的子集，算法越复杂，支持的子集通常越小。例如人脸检测仅接受 8 位灰度或彩色图；线性代数与多数 ML 算法仅接受浮点；cvtColor 支持 8U/16U/32F。请先用 convertTo 转换到受支持的类型。',
+  },
+  {
+    cat: '数据类型',
+    q: 'CV_8UC3 和 CV_32FC1 分别是什么意思？',
+    a: '格式为 CV_<深度>C<通道数>：CV_8UC3 是 8 位无符号、3 通道（常见彩色图，BGR 顺序）；CV_32FC1 是 32 位浮点单通道。4 通道以内可用常量形式；更多通道用 CV_8UC(n) 或 CV_MAKETYPE(CV_8U, n)。最大通道数 CV_CN_MAX = 128。',
+  },
+  {
+    cat: 'DNN',
+    q: 'dnn 模块能训练模型吗？',
+    a: '不能。dnn 模块仅支持前向推理（forward pass / 测试），不支持训练。请用 PyTorch、TensorFlow 等框架训练后导出为 ONNX 等格式，再用 cv::dnn::readNet 加载推理。',
+  },
+  {
+    cat: 'DNN',
+    q: '5.0 的新 DNN 引擎怎么选？',
+    a: 'readNet 的 engine 参数默认为 ENGINE_AUTO：优先使用新引擎（ONNX 覆盖率 > 80%），失败时回退经典引擎。注意新引擎目前仅支持 CPU 后端；若需要 CUDA/OpenVINO/Vulkan 等非 CPU 后端，请使用 ENGINE_CLASSIC。需要 ONNX Runtime 时用 ENGINE_ORT（需 WITH_ONNXRUNTIME=ON 构建）。',
+  },
+  {
+    cat: '社区',
+    q: '在哪里提问或报告问题？',
+    a: '首选官方问答论坛 https://forum.opencv.org；Bug 与功能请求请提交到 GitHub Issues（https://github.com/opencv/opencv/issues）。旧论坛 answers.opencv.org 为只读存档。',
+  },
+  {
+    cat: '社区',
+    q: '什么是 opencv_contrib？',
+    a: 'opencv_contrib 是包含额外（非核心）模块的仓库，提供主发行版之外的 OpenCV 功能（如 xfeatures2d 中的部分特征算法、text 文本检测等）。地址：https://github.com/opencv/opencv_contrib。Python 可通过 opencv-contrib-python 包安装。',
+  },
+  {
+    cat: '社区',
+    q: '如何为 OpenCV 做贡献？',
+    a: '阅读官方贡献指南（Wiki: How to contribute）。要点：一个 PR 对应一个问题；选择正确目标分支；包含测试与文档；提交前清理无效提交；遵循代码风格指南。详见站内贡献页面。',
+  },
+  {
+    cat: '社区',
+    q: '官方 FAQ 在哪里？',
+    a: '官方 FAQ 页面已迁移至项目 Wiki：https://github.com/opencv/opencv/wiki/FAQ 。本页为结合官方文档与 README 整理的中文版本。',
+  },
+];
+
+const categories = ['全部', '基础', '安装', 'API', '数据类型', 'DNN', '社区'];
+---
+
+<BaseLayout title="常见问题" description="OpenCV 常见问题解答：版本差异、安装、API 概念、数据类型、DNN 与社区。">
+  <PageHero
+    title="常见问题（FAQ）"
+    lead={`官方 FAQ 已迁移至 <a class='text-accent hover:underline' href='https://github.com/opencv/opencv/wiki/FAQ' target='_blank' rel='noopener'>项目 Wiki</a>。以下为结合官方文档与 README 整理的中文常见问题（共 ${faqs.length} 条）。`}
+  />
+
+  <div class="mx-auto max-w-3xl px-4 pb-16 md:pb-20">
+    <div class="flex flex-wrap gap-2" role="group" aria-label="问题分类">
+      {
+        categories.map((c, i) => (
+          <button
+            type="button"
+            data-faq-filter={c}
+            class:list={['faq-filter anchor-pill', i === 0 && 'is-active']}
+          >
+            {c}
+          </button>
+        ))
+      }
+    </div>
+
+    <div id="faq-list" class="mt-8 space-y-3">
+      {
+        faqs.map((f) => (
+          <details class="faq-item card group p-5" data-cat={f.cat}>
+            <summary class="cursor-pointer list-none font-semibold text-ink marker:hidden">
+              <span class="mr-2 inline-block text-accent transition-transform group-open:rotate-90">›</span>
+              {f.q}
+              <span class="chip ml-2">{f.cat}</span>
+            </summary>
+            <p class="mt-3 pl-6 text-sm leading-relaxed text-muted">{f.a}</p>
+          </details>
+        ))
+      }
+    </div>
+    <p id="faq-empty" class="mt-8 hidden text-center text-sm text-faint">该分类暂无问题。</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .faq-filter.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+</style>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.faq-filter');
+  const items = document.querySelectorAll<HTMLElement>('.faq-item');
+  const empty = document.getElementById('faq-empty');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.faqFilter ?? '全部';
+      buttons.forEach((b) => {
+        b.classList.toggle('is-active', b === btn);
+      });
+      let visible = 0;
+      items.forEach((item) => {
+        const show = cat === '全部' || item.dataset.cat === cat;
+        item.classList.toggle('hidden', !show);
+        if (show) visible += 1;
+      });
+      empty?.classList.toggle('hidden', visible > 0);
+    });
+  });
+</script>

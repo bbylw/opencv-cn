@@ -1,0 +1,244 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const tracks = [
+  {
+    title: 'OpenCV 教程（C++）',
+    desc: '官方主教程集合，涵盖入门、图像处理、视频分析、特征检测、目标检测与深度学习。',
+    href: 'https://docs.opencv.org/5.0/tutorials/tutorials.html',
+    tag: 'C++',
+  },
+  {
+    title: 'Python 教程',
+    desc: 'OpenCV-Python 教程：加载/显示图像、遍历像素、绘图、变换、滤波、轮廓、直方图等。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_tutorials.html',
+    tag: 'Python',
+  },
+  {
+    title: 'JavaScript（OpenCV.js）教程',
+    desc: '在浏览器中使用 OpenCV.js 进行图像处理与计算机视觉的教程。',
+    href: 'https://docs.opencv.org/5.0/js_tutorials/js_tutorials.html',
+    tag: 'JS',
+  },
+  {
+    title: 'Contrib 额外模块教程',
+    desc: 'opencv_contrib 中额外模块（非核心发行版）的使用教程。',
+    href: 'https://docs.opencv.org/5.0/tutorials_contrib/contrib_root.html',
+    tag: 'Contrib',
+  },
+  {
+    title: '使用预构建二进制文件',
+    desc: '在你自己的项目中使用 OpenCV 预构建二进制文件的入门指南（含 CMake/g++ 配置）。',
+    href: 'https://docs.opencv.org/5.0/tutorials/introduction/using_prebuilt_binaries/using_prebuilt_binaries.html',
+    tag: '入门',
+  },
+  {
+    title: '对象检测教程（objdetect）',
+    desc: 'Haar 级联、LBP、DNN 人脸与通用对象检测。',
+    href: 'https://docs.opencv.org/5.0/tutorials/objdetect/table_of_content_objdetect.html',
+    tag: '检测',
+  },
+];
+
+const pyCategories = [
+  {
+    t: 'OpenCV 简介',
+    d: '安装与环境配置、初次运行验证。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_setup/py_table_of_contents_setup.html',
+  },
+  {
+    t: 'GUI 特性',
+    d: '显示/保存图像与视频、鼠标事件、滚动条（trackbar）。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_gui/py_table_of_contents_gui.html',
+  },
+  {
+    t: '核心操作',
+    d: '像素编辑、几何变换、性能优化、数学工具。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_core/py_table_of_contents_core.html',
+  },
+  {
+    t: '图像处理',
+    d: '变换、滤波、形态学、直方图、轮廓、边缘检测、图割等。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_imgproc/py_table_of_contents_imgproc.html',
+  },
+  {
+    t: '特征检测与描述',
+    d: 'Harris、Shi-Tomasi、SIFT、SURF、ORB、特征匹配。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_features/py_table_of_contents_features.html',
+  },
+  {
+    t: '视频分析',
+    d: '光流、Meanshift/Camshift、背景减除、目标跟踪（KCF/CSRT 等）。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_video/py_table_of_contents_video.html',
+  },
+  {
+    t: '相机标定与 3D 重建',
+    d: '棋盘格标定、立体校正、视差、深度估计、PnP。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_calib3d/py_table_of_contents_calib3d.html',
+  },
+  {
+    t: '机器学习',
+    d: 'KMeans、SVM、决策树等在 OpenCV 中的使用。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_ml/py_table_of_contents_ml.html',
+  },
+  {
+    t: '计算摄影',
+    d: '图像去噪、HDR、非真实感渲染等。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_photo/py_table_of_contents_photo.html',
+  },
+  {
+    t: '对象检测（objdetect）',
+    d: 'Haar 级联与基于 DNN 的检测。',
+    href: 'https://docs.opencv.org/5.0/tutorials/objdetect/table_of_content_objdetect.html',
+  },
+  {
+    t: 'OpenCV-Python 绑定',
+    d: '绑定如何生成、如何贡献 Python 封装。',
+    href: 'https://docs.opencv.org/5.0/py_tutorials/py_bindings/py_table_of_contents_bindings.html',
+  },
+];
+
+const learningPath = [
+  { level: '入门', items: ['安装（pip / 预构建包）', 'imread / imshow / waitKey', 'Mat 与 ndarray 基础', 'BGR 与色彩空间'] },
+  { level: '基础', items: ['几何变换 resize/warp', '滤波与边缘检测', '阈值与形态学', '直方图', '轮廓 findContours'] },
+  { level: '进阶', items: ['特征检测 ORB/SIFT', '特征匹配与单应性', '相机标定', '立体视觉与视差', '视频分析与跟踪'] },
+  { level: '应用', items: ['DNN 模型加载推理', '人脸/对象检测', '全景拼接 stitching', 'OpenCV.js 浏览器部署', '性能优化与 SIMD'] },
+];
+
+const cppTopics = [
+  { t: '入门：加载、显示与保存图像', d: 'imread / imwrite / imshow 与 highgui 窗口。' },
+  { t: 'Mat 基础：复制、ROI 与性能', d: '浅拷贝 vs clone、vector<Mat>、时钟计时。' },
+  { t: '图像处理：线性/非线性滤波', d: 'blur、GaussianBlur、medianBlur、bilateralFilter。' },
+  { t: '形态学：腐蚀、膨胀与开闭运算', d: 'erode/dilate、getStructuringElement。' },
+  { t: '特征检测与描述', d: 'GoodFeatures、FAST、ORB、BF/FLANN 匹配。' },
+  { t: '视频分析：光流与跟踪', d: 'calcOpticalFlowFarneback、 trackers。' },
+  { t: '对象检测（含 DNN）', d: 'Haar 级联与 cv::dnn 检测模型。' },
+  { t: '图像拼接入门', d: 'stitching 模块流水线。' },
+];
+
+const steps = [
+  { t: '安装', d: '使用预构建二进制、包管理器（pip install opencv-python）或从源码编译。' },
+  { t: '读取图像', d: '使用 cv::imread / cv2.imread 加载图像到 Mat / ndarray。' },
+  { t: '处理', d: '调用 imgproc 等模块的函数：滤波、变换、检测、推理。' },
+  { t: '输出', d: '使用 imwrite、imshow 或 highgui 显示与保存结果。' },
+];
+
+const demo = `import cv2
+
+img = cv2.imread("example.jpg")
+if img is None:
+    raise FileNotFoundError("无法读取图像")
+
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(gray, 50, 150)
+
+cv2.imshow("edges", edges)
+cv2.waitKey(0)
+cv2.destroyAllWindows()`;
+---
+
+<BaseLayout title="教程" description="OpenCV 中文教程导航：C++、Python、JavaScript 教程体系与学习路径。">
+  <PageHero
+    title="教程"
+    lead="官方教程的中文导航与学习路径。所有外链指向 docs.opencv.org 5.0 英文原版；站内配套页面见 <a class='text-accent hover:underline' href='/examples'>示例代码</a> 与 <a class='text-accent hover:underline' href='/install'>安装指南</a>。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <!-- Quick start flow -->
+    <section>
+      <h2 class="section-title">快速上手流程</h2>
+      <ol class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          steps.map((s, i) => (
+            <li class="card relative p-5">
+              <span class="font-mono text-xs text-faint" aria-hidden="true">0{i + 1}</span>
+              <h3 class="mt-2 font-bold text-ink">{s.t}</h3>
+              <p class="mt-1 text-sm text-muted">{s.d}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <!-- Learning path -->
+    <section class="mt-14">
+      <h2 class="section-title">学习路径（四阶段）</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          learningPath.map((p) => (
+            <div class="card p-5">
+              <h3 class="font-bold text-accent">{p.level}</h3>
+              <ul class="mt-3 space-y-1.5">
+                {p.items.map((item) => (
+                  <li class="text-sm text-muted">{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Tutorial series -->
+    <section class="mt-14">
+      <h2 class="section-title">教程系列</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          tracks.map((t) => (
+            <a href={t.href} target="_blank" rel="noopener" class="card card-hover group flex items-start justify-between gap-4 p-5">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="chip">{t.tag}</span>
+                  <h3 class="font-semibold text-ink transition-colors group-hover:text-accent">{t.title}</h3>
+                </div>
+                <p class="mt-1.5 text-sm text-muted">{t.desc}</p>
+              </div>
+              <span class="mt-1 shrink-0 text-sm text-faint transition-colors group-hover:text-accent">↗</span>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Python TOC -->
+    <section class="mt-14">
+      <h2 class="section-title">Python 教程目录（中文说明）</h2>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          pyCategories.map((c) => (
+            <a href={c.href} target="_blank" rel="noopener" class="card card-hover p-4">
+              <h3 class="text-sm font-semibold text-ink">{c.t} ↗</h3>
+              <p class="mt-1 text-xs leading-relaxed text-muted">{c.d}</p>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- C++ topics -->
+    <section class="mt-14">
+      <h2 class="section-title">C++ 主要主题</h2>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2">
+        {
+          cppTopics.map((c) => (
+            <div class="card p-4">
+              <h3 class="text-sm font-semibold text-ink">{c.t}</h3>
+              <p class="mt-1 text-xs text-muted">{c.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Python example -->
+    <section class="mt-14">
+      <h2 class="section-title">示例：读取并显示图像（Python）</h2>
+      <pre class="codeblock mt-5"><code>{demo}</code></pre>
+      <p class="mt-3 text-xs text-faint">
+        更多可运行片段请查看站内
+        <a href="/examples" class="text-accent hover:underline">示例代码</a>。
+      </p>
+    </section>
+  </div>
+</BaseLayout>

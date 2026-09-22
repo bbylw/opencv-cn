@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const guidelines = [
+  {
+    title: '一个 Pull Request 对应一个问题',
+    desc: '保持变更聚焦，避免将不相关的修改混在同一个 PR 中，便于评审与合并。',
+  },
+  {
+    title: '选择正确的目标分支',
+    desc: '确认 PR 指向 OpenCV 仓库中正确的分支（例如针对当前开发周期的分支）。',
+  },
+  {
+    title: '包含测试与文档',
+    desc: '新功能或行为变更应附带相应测试，并更新相关文档。',
+  },
+  {
+    title: '提交前清理「手滑」式无效提交',
+    desc: '在请求评审之前，整理提交历史，合并误提交、修复提交等噪声提交。',
+  },
+  {
+    title: '遵循代码风格指南',
+    desc: '按照官方 Coding Style Guide 编写代码，保持与项目现有风格一致。',
+  },
+];
+
+const links = [
+  { t: '完整贡献指南（Wiki）', href: 'https://github.com/opencv/opencv/wiki/How_to_contribute' },
+  { t: '代码风格指南（Wiki）', href: 'https://github.com/opencv/opencv/wiki/Coding_Style_Guide' },
+  { t: 'GitHub 仓库', href: 'https://github.com/opencv/opencv' },
+  { t: '问题追踪', href: 'https://github.com/opencv/opencv/issues' },
+];
+---
+
+<BaseLayout title="贡献指南" description="如何为 OpenCV 贡献代码：PR 规范、分支选择、测试与代码风格。">
+  <PageHero
+    title="贡献指南"
+    lead="在开始提交 Pull Request 之前，请先阅读官方 <a class='text-accent hover:underline' href='https://github.com/opencv/opencv/wiki/How_to_contribute' target='_blank' rel='noopener'>贡献指南</a>。以下为指南要点的中文摘要。"
+  />
+
+  <div class="mx-auto max-w-4xl px-4 pb-16 md:pb-20">
+    <ol class="space-y-4">
+      {
+        guidelines.map((g, i) => (
+          <li class="card flex gap-4 p-5">
+            <span class="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">
+              {i + 1}
+            </span>
+            <div>
+              <h2 class="font-semibold text-ink">{g.title}</h2>
+              <p class="mt-1 text-sm leading-relaxed text-muted">{g.desc}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <section class="mt-12 rounded-xl bg-codebg p-6">
+      <h2 class="font-bold text-codeink">相关链接</h2>
+      <ul class="mt-3 space-y-2 text-sm">
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} target="_blank" rel="noopener" class="text-accent hover:underline">
+                {l.t} ↗
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

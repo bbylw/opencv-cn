@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const docs = [
+  { title: 'OpenCV 5.0 文档（英文）', href: 'https://docs.opencv.org/5.0/', desc: '官方文档主页' },
+  { title: 'OpenCV 5.x 文档', href: 'https://docs.opencv.org/5.x/', desc: '5.x 系列文档' },
+  { title: 'opencv.org 主页', href: 'https://opencv.org', desc: '项目官网' },
+  { title: 'OpenCV 课程', href: 'https://opencv.org/courses', desc: '官方课程' },
+];
+
+const community = [
+  { title: '问答论坛', href: 'https://forum.opencv.org', desc: '活跃的官方问答社区' },
+  { title: '旧论坛（只读）', href: 'http://answers.opencv.org', desc: '历史问答存档' },
+  { title: '问题追踪', href: 'https://github.com/opencv/opencv/issues', desc: 'GitHub Issues' },
+  { title: 'opencv_contrib', href: 'https://github.com/opencv/opencv_contrib', desc: '额外的 OpenCV 功能模块' },
+  { title: '捐赠给 OpenCV', href: 'https://opencv.org/support/', desc: '支持项目发展' },
+];
+
+const social = [
+  { title: 'YouTube 频道', href: 'https://youtube.com/@opencvofficial', desc: '观看 OpenCV Live 一小时直播节目' },
+  { title: 'LinkedIn', href: 'https://linkedin.com/company/opencv/', desc: '每日计算机视觉与 AI 前沿动态' },
+  { title: 'Mastodon', href: 'https://mastodon.social/@opencv', desc: 'Fediverse 联邦宇宙' },
+  { title: 'X（Twitter）', href: 'https://x.com/opencvofficial', desc: '官方账号' },
+  { title: 'OpenCV.ai', href: 'https://opencv.ai', desc: 'OpenCV 团队提供的计算机视觉与 AI 开发服务' },
+];
+
+const participate = [
+  { title: '提交你的 OpenCV 项目', href: 'https://form.jotform.com/233105358823151', desc: '加入 opencv.org 上的 Community Friday 栏目' },
+  { title: '申请成为 OpenCV 志愿者', href: 'https://form.jotform.com/232745316792159', desc: '协助组织活动与线上推广并扩大影响力' },
+];
+
+const sections = [
+  { title: '文档与主页', items: docs, cols: 'sm:grid-cols-2' },
+  { title: '社区', items: community, cols: 'sm:grid-cols-2 lg:grid-cols-3' },
+  { title: '关注与媒体', items: social, cols: 'sm:grid-cols-2 lg:grid-cols-3' },
+];
+---
+
+<BaseLayout title="资源" description="OpenCV 社区资源：文档、论坛、课程、频道与参与方式。">
+  <PageHero title="资源" lead="来自项目 README 的官方资源汇总，以及参与 OpenCV 社区的方式。" />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    {
+      sections.map((s) => (
+        <section class="mt-10 first:mt-0">
+          <h2 class="section-title">{s.title}</h2>
+          <div class:list={['mt-5 grid gap-4', s.cols]}>
+            {s.items.map((r) => (
+              <a href={r.href} target="_blank" rel="noopener" class="card card-hover p-5">
+                <h3 class="font-semibold text-ink">{r.title} ↗</h3>
+                <p class="mt-1 text-sm text-muted">{r.desc}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))
+    }
+
+    <section class="mt-12">
+      <h2 class="section-title">参与进来</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          participate.map((r) => (
+            <a href={r.href} target="_blank" rel="noopener" class="rounded-xl border border-dashed border-accent/50 bg-accent-soft/50 p-5 transition-colors hover:border-accent">
+              <h3 class="font-semibold text-accent">{r.title} ↗</h3>
+              <p class="mt-1 text-sm text-muted">{r.desc}</p>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</BaseLayout>

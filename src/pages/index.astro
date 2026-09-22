@@ -1,0 +1,251 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+
+const highlights = [
+  {
+    icon: 'stack',
+    title: '2500+ 优化算法',
+    desc: '经典与前沿的计算机视觉、机器学习方法的完整组合，覆盖人脸检测、目标识别、动作分类、运动跟踪、3D 重建与全景拼接。',
+    featured: true,
+  },
+  {
+    icon: 'translate',
+    title: '多语言接口',
+    desc: '提供 C++、Python、Java、JavaScript（OpenCV.js）接口，可运行于 Windows、Linux、macOS、Android 与 iOS。',
+    featured: true,
+  },
+  {
+    icon: 'lightning',
+    title: '异构加速',
+    desc: '通过 SIMD（Universal Intrinsics 2.0：SSE/AVX/NEON/SVE/RISC-V）、CUDA、OpenCL 与 Vulkan 加速计算。',
+  },
+  {
+    icon: 'flag',
+    title: 'OpenCV 5.0 重大版本',
+    desc: '最低要求 C++17，移除 Python 2 与遗留 C API；新增 CV_16BF 等数据类型；calib3d 拆分为 geometry、calib、stereo、ptcloud。',
+  },
+  {
+    icon: 'brain',
+    title: '新一代 DNN 引擎',
+    desc: 'ONNX 规范覆盖率从不足 23% 提升至 80% 以上，集成 ONNX Runtime，模型托管于 Hugging Face。',
+  },
+  {
+    icon: 'gauge',
+    title: '性能大幅提升',
+    desc: '图像 warp 加速 10% 至 300%+；USAC 成为鲁棒估计默认框架；Vulkan 计算支持。',
+  },
+];
+
+const quickLinks = [
+  { href: '/intro', title: '入门简介', desc: '模块结构与 8 大核心 API 概念' },
+  { href: '/install', title: '安装配置', desc: 'CMake / g++ / Python 环境搭建' },
+  { href: '/modules', title: '核心模块', desc: '17 个主模块功能详解' },
+  { href: '/datatypes', title: '像素数据类型', desc: 'CV_8U 到 CV_Bool 完整参考' },
+  { href: '/tutorials', title: '教程指南', desc: 'C++ / Python / JS 教程体系' },
+  { href: '/dnn', title: '深度学习', desc: 'DNN 引擎、后端与模型加载' },
+  { href: '/examples', title: '示例代码', desc: '开箱即用的多语言示例' },
+  { href: '/resources', title: '社区资源', desc: '论坛、课程、频道与参与方式' },
+];
+
+const applications = [
+  { icon: 'user', title: '人脸检测与识别', desc: 'objdetect 中的 Haar/DNN 人脸、眼睛、微笑检测，以及人脸识别流水线。' },
+  { icon: 'image', title: '图像处理', desc: '滤波、边缘检测、形态学、几何变换、直方图均衡、色彩空间转换。' },
+  { icon: 'video-camera', title: '视频分析', desc: '背景减除、光流、Meanshift/Camshift、KCF/CSRT 目标跟踪。' },
+  { icon: 'crosshair', title: '目标检测', desc: '通过 dnn 模块运行 YOLO、SSD、EfficientDet 等检测模型。' },
+  { icon: 'aperture', title: '相机标定与 3D', desc: '棋盘格标定、立体校正、视差计算、PnP 位姿估计、点云处理。' },
+  { icon: 'mountains', title: '全景拼接', desc: 'stitching 模块：特征匹配、柱面/球面投影、多带融合生成全景图。' },
+  { icon: 'magnifying-glass', title: '特征匹配', desc: 'SIFT、ORB、AKAZE 等检测描述子与 FLANN 匹配，用于图像检索与拼接。' },
+  { icon: 'magic-wand', title: '计算摄影', desc: 'photo 模块：去噪、HDR、卡通化、图像修复（inpainting）。' },
+  { icon: 'globe', title: '浏览器端视觉', desc: 'OpenCV.js 将核心算法编译为 WebAssembly，在浏览器中实时处理。' },
+];
+
+const quickstart = `import cv2
+
+img = cv2.imread("cat.jpg")        # 读取图像（BGR 顺序）
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(gray, 50, 150)   # Canny 边缘检测
+
+cv2.imshow("edges", edges)
+cv2.waitKey(0)`;
+
+const stats = [
+  { v: '2,500+', k: '优化算法' },
+  { v: '4', k: '语言接口' },
+  { v: '17', k: '主模块' },
+  { v: '80%+', k: 'ONNX 覆盖率' },
+];
+
+const compare = [
+  { aspect: 'C++ 标准', old: 'C++11 起步', cur: '最低 C++17' },
+  { aspect: 'Python', old: '2/3（部分版本）', cur: '仅 Python 3.6+' },
+  { aspect: 'C API', old: '已弃用', cur: '完全移除' },
+  { aspect: '数据类型', old: 'CV_8U ~ CV_64F、CV_16F', cur: '新增 CV_16BF、CV_32U、CV_64U、CV_64S、CV_Bool；支持 0D/1D 数组' },
+  { aspect: '模块划分', old: 'calib3d 单一模块', cur: '拆分为 geometry / calib / stereo / ptcloud' },
+  { aspect: 'DNN', old: 'ONNX 覆盖 < 23%', cur: 'ONNX 覆盖 > 80%；ONNX Runtime 集成；Hugging Face 模型' },
+  { aspect: '性能', old: 'Universal Intrinsics 1.x', cur: '2.0（含 SVE/RISC-V）；warp 加速 10%~300%+；Vulkan 计算；USAC 默认' },
+];
+---
+
+<BaseLayout title="首页">
+  <!-- Hero: asymmetric split -->
+  <section class="border-b border-line">
+    <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:py-20 lg:grid-cols-12 lg:py-24">
+      <div class="min-w-0 lg:col-span-7">
+        <p class="mb-5 inline-block rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
+          基于 OpenCV 5.0 官方文档 · 中文整理
+        </p>
+        <h1 class="text-4xl font-black leading-[1.15] tracking-tight text-ink sm:text-5xl">
+          开源计算机视觉库的中文指南
+        </h1>
+        <p class="mt-5 max-w-[60ch] text-lg leading-relaxed text-muted">
+          从像素类型到深度学习推理，系统整理 OpenCV 5.0 的模块、API 与实践。
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="/intro" class="btn-primary">开始阅读</a>
+          <a href="/install" class="btn-secondary">安装指南</a>
+        </div>
+      </div>
+      <div class="min-w-0 lg:col-span-5">
+        <div class="overflow-hidden rounded-xl border border-codeline bg-codebg">
+          <div class="flex items-center justify-between border-b border-codeline px-4 py-2.5">
+            <span class="font-mono text-xs text-faint">quickstart.py</span>
+            <span class="chip">Python</span>
+          </div>
+          <pre class="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-codeink"><code>{quickstart}</code></pre>
+        </div>
+        <p class="mt-3 text-right text-xs text-faint">
+          更多语言入口见
+          <a href="/examples" class="text-accent hover:underline">示例代码</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats strip -->
+  <section class="border-b border-line">
+    <dl class="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden px-4 py-8 sm:grid-cols-4">
+      {
+        stats.map((s) => (
+          <div class="px-2 text-center">
+            <dt class="text-3xl font-black tracking-tight text-ink">{s.v}</dt>
+            <dd class="mt-1 text-sm text-muted">{s.k}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <!-- Highlights: bento, 2 featured + 4 regular -->
+  <section class="mx-auto max-w-6xl px-4 py-16 md:py-20">
+    <h2 class="section-title">OpenCV 5.0 亮点</h2>
+    <p class="mt-2 max-w-[60ch] text-sm text-muted">在 4.x 基础上构建的重大版本。</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        highlights.map((item) => (
+          <article
+            class:list={[
+              'card p-6',
+              item.featured && 'sm:col-span-2 lg:col-span-2',
+            ]}
+          >
+            <Icon name={item.icon} class="size-6 text-accent" />
+            <h3 class="mt-4 font-bold text-ink">{item.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted">{item.desc}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Applications: icon rows -->
+  <section class="border-y border-line bg-surface">
+    <div class="mx-auto max-w-6xl px-4 py-16 md:py-20">
+      <h2 class="section-title">能做什么</h2>
+      <p class="mt-2 max-w-[60ch] text-sm text-muted">典型应用领域一览。</p>
+      <ul class="mt-8 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          applications.map((a) => (
+            <li class="flex gap-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden="true">
+                <Icon name={a.icon} class="size-5" />
+              </span>
+              <div>
+                <h3 class="font-semibold text-ink">{a.title}</h3>
+                <p class="mt-1 text-sm leading-relaxed text-muted">{a.desc}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Language interfaces: code cards -->
+  <section class="mx-auto max-w-6xl px-4 py-16 md:py-20">
+    <h2 class="section-title">语言接口</h2>
+    <p class="mt-2 max-w-[60ch] text-sm text-muted">同一套算法，四种语言入口。</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+      {
+        [
+          { name: 'C++', note: '原生 API，性能最佳；5.0 要求 C++17', code: '#include <opencv2/imgcodecs.hpp>\nauto img = cv::imread("cat.jpg");' },
+          { name: 'Python', note: 'pip 安装，原型开发首选；需 Python 3.6+', code: 'import cv2\nimg = cv2.imread("cat.jpg")' },
+          { name: 'Java', note: 'Android 开发常用绑定', code: 'Mat img = Imgcodecs.imread("cat.jpg");' },
+          { name: 'JavaScript', note: 'OpenCV.js，WebAssembly 运行', code: 'let img = cv.imread("canvas");' },
+        ].map((lang) => (
+          <div class="overflow-hidden card">
+            <div class="flex items-center justify-between border-b border-line px-5 py-3">
+              <h3 class="font-bold text-ink">{lang.name}</h3>
+              <span class="text-xs text-faint">{lang.note}</span>
+            </div>
+            <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{lang.code}</code></pre>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Quick links -->
+  <section class="border-y border-line bg-surface">
+    <div class="mx-auto max-w-6xl px-4 py-16 md:py-20">
+      <h2 class="section-title">快速导航</h2>
+      <div class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          quickLinks.map((link) => (
+            <a href={link.href} class="group card card-hover p-5">
+              <h3 class="font-semibold text-ink transition-colors group-hover:text-accent">{link.title}</h3>
+              <p class="mt-1 text-sm text-muted">{link.desc}</p>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 4.x to 5.0 comparison -->
+  <section class="mx-auto max-w-6xl px-4 py-16 md:py-20">
+    <h2 class="section-title">从 4.x 到 5.0</h2>
+    <div class="mt-8 overflow-x-auto rounded-xl">
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>方面</th>
+            <th>OpenCV 4.x</th>
+            <th>OpenCV 5.0</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            compare.map((row) => (
+              <tr>
+                <td class="font-semibold text-ink">{row.aspect}</td>
+                <td class="text-muted">{row.old}</td>
+                <td>{row.cur}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,259 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const overview = [
+  { t: '仅前向推理', d: 'dnn 模块只支持 forward pass（网络测试/推理），不支持网络训练。训练请使用 PyTorch、TensorFlow 等框架后导出。' },
+  { t: '层（Layer）体系', d: '提供新层创建 API、常用内置层、从层构建与修改网络的 API，以及从各框架加载序列化模型的功能。' },
+  { t: '5.0 新一代引擎', d: 'ONNX 规范覆盖从 4.x 的不足 23% 提升至 80% 以上；集成 ONNX Runtime；推荐模型托管于 Hugging Face。' },
+];
+
+const engines = [
+  { id: 'ENGINE_CLASSIC', label: '经典引擎', desc: '与 4.x 分支类似的传统 DNN 引擎；当前唯一支持非 CPU 后端的引擎。' },
+  { id: 'ENGINE_NEW', label: '新引擎', desc: '5.0 新引擎；目前仅支持 CPU 后端，ONNX 覆盖率大幅提升。' },
+  { id: 'ENGINE_AUTO', label: '自动（默认）', desc: '优先尝试新引擎，失败时回退经典引擎。readNet 的默认参数。' },
+  { id: 'ENGINE_ORT', label: 'ONNX Runtime', desc: 'ONNX 专用包装；需以 WITH_ONNXRUNTIME=ON 构建 OpenCV。' },
+];
+
+const backends = [
+  { id: 'DNN_BACKEND_DEFAULT', n: '默认', d: '由 CMake 或配置参数决定' },
+  { id: 'DNN_BACKEND_OPENCV', n: 'OpenCV', d: '内置 CPU/OpenCL 实现' },
+  { id: 'DNN_BACKEND_INFERENCE_ENGINE', n: 'OpenVINO', d: 'Intel OpenVINO；目标含 CPU/OpenCL/MYRIAD/HDDL/NPU' },
+  { id: 'DNN_BACKEND_CUDA', n: 'CUDA', d: 'NVIDIA GPU' },
+  { id: 'DNN_BACKEND_VKCOM', n: 'Vulkan', d: 'Vulkan 计算' },
+  { id: 'DNN_BACKEND_WEBNN', n: 'WebNN', d: '浏览器神经网络 API' },
+  { id: 'DNN_BACKEND_TIMVX', n: 'tim-VX', d: 'NPU（如瑞芯微）' },
+  { id: 'DNN_BACKEND_CANN', n: 'CANN', d: '华为昇腾' },
+];
+
+const targets = [
+  'DNN_TARGET_CPU', 'DNN_TARGET_OPENCL', 'DNN_TARGET_OPENCL_FP16',
+  'DNN_TARGET_CUDA', 'DNN_TARGET_CUDA_FP16', 'DNN_TARGET_VULKAN',
+  'DNN_TARGET_MYRIAD', 'DNN_TARGET_HDDL', 'DNN_TARGET_NPU',
+  'DNN_TARGET_FPGA', 'DNN_TARGET_CPU_FP16',
+];
+
+const formats = [
+  { f: 'ONNX', ext: '*.onnx', fn: 'readNetFromONNX', note: '5.0 首选格式；Hugging Face 托管' },
+  { f: 'TensorFlow', ext: '*.pb / *.pbtxt', fn: 'readNetFromTensorflow', note: '冻结图 + 可选文本配置' },
+  { f: 'OpenVINO', ext: '*.xml + *.bin', fn: 'readNetFromModelOptimizer', note: 'Intel 中间表示' },
+  { f: 'TFLite', ext: '*.tflite', fn: 'readNetFromTFLite', note: '移动端轻量模型' },
+  { f: 'Caffe', ext: '*.caffemodel + *.prototxt', fn: 'readNetFromCaffe', note: '经典检测模型' },
+  { f: 'Darknet', ext: '*.weights + *.cfg', fn: 'readNetFromDarknet', note: 'YOLO v1-v4' },
+];
+
+const highLevel = [
+  { c: 'ClassificationModel', d: '分类模型高层 API' },
+  { c: 'DetectionModel', d: '目标检测高层 API' },
+  { c: 'SegmentationModel', d: '语义分割高层 API' },
+  { c: 'KeypointsModel', d: '关键点模型高层 API' },
+  { c: 'TextDetectionModel_EAST / _DB', d: '文本检测（EAST / DB）' },
+  { c: 'TextRecognitionModel', d: '文本识别高层 API' },
+];
+
+const preprocess = [
+  { t: 'blobFromImage', d: '从图像创建 4 维 NCHW blob；可选 resize、中心裁剪、减均值、缩放、BGR↔RGB。顺序：(input - mean) × scalefactor。' },
+  { t: 'blobFromImageWithParams', d: '配合 Image2BlobParams 满足更复杂的预处理（如 letterbox，YOLO 常用）。' },
+  { t: 'imagesFromBlob', d: '将 4D blob 还原为 vector<Mat> 图像列表。' },
+  { t: 'NMSBoxes / NMSBoxesBatched', d: '非极大值抑制；批量版支持跨类别 class_ids。' },
+  { t: 'softNMSBoxes', d: 'Soft-NMS（线性 / 高斯衰减）。' },
+  { t: 'enableModelDiagnostics', d: '模型加载详细日志，排查未实现层等问题。' },
+];
+
+const demo = `import cv2
+
+# 加载 ONNX 模型（ENGINE_AUTO：优先新引擎）
+net = cv2.dnn.readNet("model.onnx")
+
+# 图像 → blob（NCHW）
+img = cv2.imread("bus.jpg")
+blob = cv2.dnn.blobFromImage(
+    img, scalefactor=1/255.0, size=(640, 640),
+    mean=(0, 0, 0), swapRB=True, crop=False
+)
+
+net.setInput(blob)
+outs = net.forward(net.getUnconnectedOutLayersNames())
+
+# NMS 后处理示意
+indices = cv2.dnn.NMSBoxes(bboxes, scores, 0.5, 0.4)
+for i in indices.flatten():
+    print(bboxes[i], scores[i])`;
+
+const cppDemo = `#include <opencv2/dnn.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+cv::Mat img = cv::imread("bus.jpg");
+cv::Mat blob = cv::dnn::blobFromImage(
+    img, 1/255.0, {640, 640}, {}, true);
+
+cv::dnn::Net net = cv::dnn::readNet("model.onnx");
+net.setInput(blob);
+std::vector<cv::Mat> outs;
+net.forward(outs, net.getUnconnectedOutLayersNames());`;
+
+const hf = [
+  { t: '官方推荐', d: '5.0 起推荐从 Hugging Face 获取与分享 ONNX 模型，配合新引擎获得最全算子覆盖。' },
+  { t: '算子覆盖', d: '新引擎 ONNX 覆盖率 > 80%（4.x 不足 23%），常见检测/分类/分割模型可直接加载。' },
+  { t: '性能', d: '配合 Universal Intrinsics 2.0 与 Vulkan/CUDA 后端，可按平台选择最优执行路径。' },
+];
+---
+
+<BaseLayout title="深度学习" description="OpenCV DNN 模块中文指南：引擎选择、后端与目标、模型格式、预处理与后处理 API。">
+  <PageHero title="深度神经网络（DNN）" lead="dnn 模块提供层创建 API、内置常用层、网络构建与修改，以及从各框架加载序列化模型的能力。功能仅限<strong class='text-ink'>前向计算（推理）</strong>，不支持训练。" />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <!-- Overview -->
+    <section class="grid gap-4 sm:grid-cols-3">
+      {
+        overview.map((o) => (
+          <div class="card p-5">
+            <h2 class="font-semibold text-ink">{o.t}</h2>
+            <p class="mt-2 text-sm leading-relaxed text-muted">{o.d}</p>
+          </div>
+        ))
+      }
+    </section>
+
+    <!-- Engines -->
+    <section class="mt-14">
+      <h2 class="section-title">DNN 引擎选择（5.0 新特性）</h2>
+      <p class="mt-2 text-sm text-muted">readNet(..., engine=) 参数；默认 ENGINE_AUTO。</p>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          engines.map((e) => (
+            <div class="card p-5">
+              <code class="font-mono text-sm font-semibold text-accent">{e.id}</code>
+              <div class="mt-1 text-sm font-medium text-ink">{e.label}</div>
+              <p class="mt-1 text-sm text-muted">{e.desc}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="mt-4 rounded-xl border border-accent/30 bg-accent-soft p-4 text-sm text-muted">
+        <strong class="text-ink">注意：</strong>新引擎目前<strong class="text-ink">不支持非 CPU 后端</strong>。若需 CUDA/OpenVINO/Vulkan，请使用 ENGINE_CLASSIC 或 ENGINE_AUTO 的回退路径。
+      </div>
+    </section>
+
+    <!-- Backends -->
+    <section class="mt-14">
+      <h2 class="section-title">计算后端（Backend）</h2>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          backends.map((b) => (
+            <div class="card p-4">
+              <code class="font-mono text-xs text-accent">{b.id}</code>
+              <div class="mt-1 text-sm font-semibold text-ink">{b.n}</div>
+              <p class="mt-1 text-xs text-muted">{b.d}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="mt-6">
+        <h3 class="text-sm font-semibold text-ink">目标设备（Target）</h3>
+        <div class="mt-2 flex flex-wrap gap-2">
+          {targets.map((t) => (
+            <code class="chip">{t}</code>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Formats -->
+    <section class="mt-14">
+      <h2 class="section-title">支持的模型格式</h2>
+      <div class="mt-5 overflow-x-auto rounded-xl">
+        <table class="doc-table min-w-[680px]">
+          <thead>
+            <tr>
+              <th>框架</th>
+              <th>文件</th>
+              <th>加载函数</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              formats.map((f) => (
+                <tr>
+                  <td class="font-semibold text-ink">{f.f}</td>
+                  <td class="font-mono text-xs">{f.ext}</td>
+                  <td class="font-mono text-xs text-accent">{f.fn}</td>
+                  <td class="text-xs text-muted">{f.note}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-faint">
+        通用入口：<code class="code-inline">cv::dnn::readNet(model, config, framework, engine)</code> 会自动检测框架格式。
+      </p>
+    </section>
+
+    <!-- API + Model API -->
+    <section class="mt-14 grid gap-8 lg:grid-cols-2">
+      <div>
+        <h2 class="section-title">常用 API</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            preprocess.map((p) => (
+              <li class="card p-4">
+                <code class="font-mono text-sm font-semibold text-accent">{p.t}</code>
+                <p class="mt-1 text-sm leading-relaxed text-muted">{p.d}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div>
+        <h2 class="section-title">高层 Model API</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            highLevel.map((h) => (
+              <li class="card flex items-baseline justify-between gap-3 p-4">
+                <code class="font-mono text-sm text-accent">{h.c}</code>
+                <span class="text-right text-xs text-muted">{h.d}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="mt-3 text-xs text-faint">均继承自 <code class="code-inline">cv::dnn::Model</code> 基类。</p>
+      </div>
+    </section>
+
+    <!-- Code -->
+    <section class="mt-14 grid gap-6 lg:grid-cols-2">
+      <div class="overflow-hidden card">
+        <div class="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">Python 推理示例</div>
+        <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{demo}</code></pre>
+      </div>
+      <div class="overflow-hidden card">
+        <div class="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">C++ 推理示例</div>
+        <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{cppDemo}</code></pre>
+      </div>
+    </section>
+
+    <!-- Hugging Face -->
+    <section class="mt-14 rounded-xl border border-accent/30 bg-accent-soft p-6">
+      <h2 class="text-lg font-bold text-ink">模型生态：Hugging Face</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        {
+          hf.map((h) => (
+            <div>
+              <h3 class="text-sm font-semibold text-ink">{h.t}</h3>
+              <p class="mt-1 text-sm leading-relaxed text-muted">{h.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <p class="mt-12 text-sm text-faint">
+      来源：
+      <a href="https://docs.opencv.org/5.0/main_modules/dnn.html" target="_blank" rel="noopener" class="text-accent hover:underline">
+        docs.opencv.org/5.0/main_modules/dnn.html
+      </a>
+    </p>
+  </div>
+</BaseLayout>

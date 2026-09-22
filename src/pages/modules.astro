@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface Module {
+  name: string;
+  zh: string;
+  desc: string;
+  href: string;
+  group: 'core' | 'img' | 'geo' | 'ai' | 'aux';
+}
+
+const modules: Module[] = [
+  { name: 'core', zh: '核心功能', desc: '基本数据结构（稠密多维数组 Mat）与所有模块共用的基础函数。', href: 'https://docs.opencv.org/5.0/main_modules/core.html', group: 'core' },
+  { name: 'imgproc', zh: '图像处理', desc: '线性/非线性滤波、几何变换（resize、仿射与透视、通用重映射）、颜色空间转换、直方图等。', href: 'https://docs.opencv.org/5.0/main_modules/imgproc.html', group: 'img' },
+  { name: 'imgcodecs', zh: '图像编解码', desc: '读写各种格式图像文件（JPEG、PNG、TIFF 等）的函数。', href: 'https://docs.opencv.org/5.0/main_modules/imgcodecs.html', group: 'img' },
+  { name: 'videoio', zh: '视频 I/O', desc: '易用的视频捕捉与视频编解码器接口（摄像头、文件、网络流）。', href: 'https://docs.opencv.org/5.0/main_modules/videoio.html', group: 'img' },
+  { name: 'highgui', zh: '高级 GUI', desc: '简单 UI 能力：窗口、鼠标、滚动条等交互。', href: 'https://docs.opencv.org/5.0/main_modules/highgui.html', group: 'aux' },
+  { name: 'video', zh: '视频分析', desc: '运动估计、背景减除与目标跟踪算法（光流、Meanshift、KCF 等）。', href: 'https://docs.opencv.org/5.0/main_modules/video.html', group: 'img' },
+  { name: '3d', zh: '三维视觉', desc: '基本多视图几何算法、物体位姿估计与 3D 重建要素。', href: 'https://docs.opencv.org/5.0/main_modules/_3d.html', group: 'geo' },
+  { name: 'features', zh: '特征框架', desc: '显著特征检测器、描述子与描述子匹配器（ORB、SIFT 等）。', href: 'https://docs.opencv.org/5.0/main_modules/features.html', group: 'geo' },
+  { name: 'objdetect', zh: '目标检测', desc: '预定义类别（人脸、眼睛、杯子、人、车等）的对象与实例检测。', href: 'https://docs.opencv.org/5.0/main_modules/objdetect.html', group: 'ai' },
+  { name: 'calib', zh: '相机标定', desc: '单目与双目相机标定。（原 calib3d 拆分而来）', href: 'https://docs.opencv.org/5.0/main_modules/calib.html', group: 'geo' },
+  { name: 'stereo', zh: '立体匹配', desc: '立体对应（视差）算法。（原 calib3d 拆分而来）', href: 'https://docs.opencv.org/5.0/main_modules/stereo.html', group: 'geo' },
+  { name: 'geometry', zh: '计算几何', desc: '计算几何图元模块。（原 calib3d 拆分而来）', href: 'https://docs.opencv.org/5.0/main_modules/geometry.html', group: 'geo' },
+  { name: 'ptcloud', zh: '点云处理', desc: '点云处理模块。（原 calib3d 拆分而来）', href: 'https://docs.opencv.org/5.0/main_modules/ptcloud.html', group: 'geo' },
+  { name: 'dnn', zh: '深度神经网络', desc: '深度神经网络推理；5.0 新一代引擎 ONNX 覆盖率超 80%。', href: 'https://docs.opencv.org/5.0/main_modules/dnn.html', group: 'ai' },
+  { name: 'photo', zh: '计算摄影', desc: '高级照片处理：去噪、HDR、卡通化、图像修复（inpainting）。', href: 'https://docs.opencv.org/5.0/main_modules/photo.html', group: 'img' },
+  { name: 'stitching', zh: '图像拼接', desc: '图像拼接与全景图创建（特征匹配、投影、多带融合）。', href: 'https://docs.opencv.org/5.0/main_modules/stitching.html', group: 'geo' },
+  { name: 'flann', zh: '多维搜索', desc: '高维空间聚类与快速最近邻搜索（近似匹配加速结构）。', href: 'https://docs.opencv.org/5.0/main_modules/flann.html', group: 'aux' },
+];
+
+const groups = [
+  { id: 'core', label: '核心基础' },
+  { id: 'img', label: '图像与视频' },
+  { id: 'geo', label: '几何与 3D' },
+  { id: 'ai', label: '检测与 AI' },
+  { id: 'aux', label: '辅助模块' },
+] as const;
+
+const extras = [
+  { t: 'contrib 额外模块', d: '主发行版之外的模块集合（如 xfeatures2d、text、optflow 等），仓库：opencv/opencv_contrib。', href: 'https://github.com/opencv/opencv_contrib' },
+  { t: 'HAL 硬件加速层', d: '稳定 C 接口，硬件厂商可注入芯片级优化实现。', href: 'https://docs.opencv.org/5.0/main_modules/hal.html' },
+  { t: 'Python / Java 绑定', d: '由生成脚本从 C++ 头文件自动导出；5.0 起仅支持 Python 3.6+。', href: 'https://docs.opencv.org/5.0/py_tutorials/py_bindings/py_table_of_contents_bindings.html' },
+  { t: 'OpenCV.js', d: '核心模块编译为 WebAssembly，在浏览器中运行。', href: 'https://docs.opencv.org/5.0/js_tutorials/js_tutorials.html' },
+];
+
+const history = [
+  { v: '1.x', d: '基于 C API 的初始版本' },
+  { v: '2.4', d: 'C++ API 普及；C API 开始弃用' },
+  { v: '3.x', d: '模块化重构（如 core/imgproc 分离完善）' },
+  { v: '4.x', d: 'ABI 整理；DNN 成熟；大量新算法' },
+  { v: '5.0', d: 'C++17；移除 C API 与 Py2；calib3d 拆分；新 DNN 引擎；新数据类型', current: true },
+];
+---
+
+<BaseLayout title="核心模块" description="OpenCV 5.0 主模块中文说明：core、imgproc、dnn、objdetect 等 17 个模块分组详解。">
+  <PageHero
+    title="核心模块"
+    lead="OpenCV 采用模块化设计，安装包包含多个共享或静态库。以下为 5.0 主模块（Main modules）的中文说明，按功能分组。原 calib3d 在 5.0 中拆分为 <strong class='text-ink'>geometry、calib、stereo、ptcloud</strong> 四个模块。完整 API 见 <a class='text-accent hover:underline' href='https://docs.opencv.org/5.0/main_modules/api_root.html' target='_blank' rel='noopener'>官方模块列表</a>。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <!-- Version timeline -->
+    <section class="overflow-x-auto" aria-label="版本时间线">
+      <ol class="flex min-w-[640px] items-stretch gap-2">
+        {
+          history.map((h) => (
+            <li
+              class:list={[
+                'flex-1 rounded-xl p-3 text-center',
+                h.current ? 'bg-accent text-accent-ink' : 'bg-raised text-muted',
+              ]}
+            >
+              <div class="text-sm font-bold">{h.v}</div>
+              <div class="mt-1 text-[11px] leading-tight opacity-80">{h.d}</div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    {
+      groups.map((g) => {
+        const items = modules.filter((m) => m.group === g.id);
+        return (
+          <section class="mt-12">
+            <div class="flex items-center gap-3">
+              <h2 class="section-title">{g.label}</h2>
+              <span class="chip">{items.length} 个模块</span>
+            </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((m) => (
+                <a href={m.href} target="_blank" rel="noopener" class="card card-hover group flex flex-col p-5">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <h3 class="font-mono font-bold text-accent">{m.name}</h3>
+                    <span class="text-sm font-medium text-ink">{m.zh}</span>
+                  </div>
+                  <p class="mt-3 flex-1 text-sm leading-relaxed text-muted">{m.desc}</p>
+                  <span class="mt-4 text-xs text-faint transition-colors group-hover:text-accent">官方文档 ↗</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        );
+      })
+    }
+
+    <section class="mt-14">
+      <h2 class="section-title">扩展与生态</h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          extras.map((e) => (
+            <a href={e.href} target="_blank" rel="noopener" class="card card-hover p-5">
+              <h3 class="font-semibold text-ink">{e.t} ↗</h3>
+              <p class="mt-1 text-sm leading-relaxed text-muted">{e.d}</p>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mt-8 rounded-xl bg-raised p-6">
+      <h2 class="font-bold text-ink">链接注意（5.0）</h2>
+      <p class="mt-2 text-sm leading-relaxed text-muted">
+        遗留 C API 已移除，不再链接 <code class="code-inline">-lopencv_calib3d</code>。
+        请按需链接拆分后的库：
+        <code class="code-inline">opencv_geometry</code>、
+        <code class="code-inline">opencv_calib</code>、
+        <code class="code-inline">opencv_stereo</code>、
+        <code class="code-inline">opencv_ptcloud</code>。
+        配置方法见 <a href="/install" class="text-accent hover:underline">安装指南</a>。
+      </p>
+    </section>
+  </div>
+</BaseLayout>

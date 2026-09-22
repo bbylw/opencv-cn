@@ -1,0 +1,177 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface Snippet {
+  title: string;
+  desc: string;
+  lang: 'python' | 'cpp' | 'js';
+  code: string;
+}
+
+const groups = [
+  {
+    id: 'basics',
+    title: '基础操作',
+    items: [
+      {
+        title: '读取并显示图像（Python）',
+        desc: 'imread / imshow / waitKey 最小示例',
+        lang: 'python',
+        code: `import cv2\n\nimg = cv2.imread("cat.jpg")          # BGR 顺序\nif img is None:\n    raise FileNotFoundError("无法读取图像")\n\ncv2.imshow("image", img)\ncv2.waitKey(0)                        # 等待按键\ncv2.destroyAllWindows()`,
+      },
+      {
+        title: '创建矩阵与访问像素（C++）',
+        desc: 'Mat 构造、at<> 访问、类型查看',
+        lang: 'cpp',
+        code: `#include <opencv2/core.hpp>\n#include <iostream>\nusing namespace cv;\n\nint main() {\n    Mat img(Size(640, 480), CV_8UC3, Scalar(0, 255, 0)); // 绿色图\n    std::cout << "type=" << img.type()\n              << " channels=" << img.channels() << "\\n";\n\n    Vec3b& px = img.at<Vec3b>(10, 10); // BGR\n    px[0] = 255;                       // 蓝色分量\n    return 0;\n}`,
+      },
+      {
+        title: '视频捕获与边缘检测（C++）',
+        desc: '官方 Introduction 示例：摄像头 → 灰度 → 高斯模糊 → Canny',
+        lang: 'cpp',
+        code: `#include "opencv2/imgproc.hpp"\n#include "opencv2/highgui.hpp"\nusing namespace cv;\n\nint main(int, char**) {\n    VideoCapture cap(0);\n    if (!cap.isOpened()) return -1;\n\n    Mat frame, edges;\n    namedWindow("edges", WINDOW_AUTOSIZE);\n    for (;;) {\n        cap >> frame;   // frame 自动分配\n        cvtColor(frame, edges, COLOR_BGR2GRAY);\n        GaussianBlur(edges, edges, Size(7, 7), 1.5, 1.5);\n        Canny(edges, edges, 0, 30, 3);   // edges 自动分配\n        imshow("edges", edges);\n        if (waitKey(30) >= 0) break;\n    }\n    return 0;\n}`,
+      },
+    ] as Snippet[],
+  },
+  {
+    id: 'imgproc',
+    title: '图像处理',
+    items: [
+      {
+        title: '自适应阈值二值化',
+        desc: '光照不均场景下优于固定阈值',
+        lang: 'python',
+        code: `import cv2\n\ngray = cv2.cvtColor(cv2.imread("doc.jpg"), cv2.COLOR_BGR2GRAY)\n\n# 固定阈值\n_, th1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)\n\n# 自适应阈值\nth2 = cv2.adaptiveThreshold(\n    gray, 255,\n    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\n    cv2.THRESH_BINARY, 11, 2,\n)\ncv2.imwrite("binary.png", th2)`,
+      },
+      {
+        title: '轮廓检测与外接矩形',
+        desc: 'findContours + boundingRect',
+        lang: 'python',
+        code: `import cv2\nimport numpy as np\n\nimg = cv2.imread("shapes.png")\ngray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n_, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)\n\ncontours, _ = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)\nfor c in contours:\n    if cv2.contourArea(c) < 100:\n        continue\n    x, y, w, h = cv2.boundingRect(c)\n    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)\n\ncv2.imwrite("detected.png", img)`,
+      },
+      {
+        title: '仿射与透视变换',
+        desc: 'getAffineTransform / warpPerspective',
+        lang: 'python',
+        code: `import cv2\nimport numpy as np\n\nimg = cv2.imread("board.jpg")\nh, w = img.shape[:2]\n\n# 仿射：3 点对应\nsrc = np.float32([[0, 0], [w, 0], [0, h]])\ndst = np.float32([[50, 50], [w - 50, 20], [20, h - 50]])\nM = cv2.getAffineTransform(src, dst)\naffine = cv2.warpAffine(img, M, (w, h))\n\n# 透视：4 点对应（如文档矫正）\npts_src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])\npts_dst = np.float32([[0, 0], [w, 0], [w, h], [0, h]])\nH = cv2.getPerspectiveTransform(pts_src, pts_dst)\npersp = cv2.warpPerspective(img, H, (w, h))`,
+      },
+    ] as Snippet[],
+  },
+  {
+    id: 'features',
+    title: '特征与匹配',
+    items: [
+      {
+        title: 'ORB 特征检测与匹配',
+        desc: '免专利的快速特征；比 SIFT 快且开源友好',
+        lang: 'python',
+        code: `import cv2\n\nimg1 = cv2.imread("box.png", cv2.IMREAD_GRAYSCALE)\nimg2 = cv2.imread("box_in_scene.png", cv2.IMREAD_GRAYSCALE)\n\norb = cv2.ORB_create(nfeatures=1000)\nkp1, des1 = orb.detectAndCompute(img1, None)\nkp2, des2 = orb.detectAndCompute(img2, None)\n\nbf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)\nmatches = sorted(bf.match(des1, des2), key=lambda m: m.distance)\n\nout = cv2.drawMatches(img1, kp1, img2, kp2, matches[:20], None,\n                      flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)\ncv2.imwrite("matches.png", out)`,
+      },
+      {
+        title: '单应性估计（RANSAC）',
+        desc: 'findHomography 用于拼接与增强现实',
+        lang: 'python',
+        code: `import cv2\nimport numpy as np\n\n# pts1 / pts2 为对应点 Nx2\nH, mask = cv2.findHomography(pts1, pts2, cv2.RANSAC, 5.0)\ninliers = mask.ravel().sum()\nprint(f"inliers: {inliers}/{len(pts1)}")\n\n# 将图1投影到图2坐标系\nwarp = cv2.warpPerspective(img1, H, (img2.shape[1], img2.shape[0]))`,
+      },
+    ] as Snippet[],
+  },
+  {
+    id: 'video',
+    title: '视频分析',
+    items: [
+      {
+        title: '背景减除（MOG2）',
+        desc: '静态摄像头前景/背景分割',
+        lang: 'python',
+        code: `import cv2\n\ncap = cv2.VideoCapture("traffic.mp4")\nbackSub = cv2.createBackgroundSubtractorMOG2(\n    history=500, varThreshold=50, detectShadows=True\n)\n\nwhile True:\n    ok, frame = cap.read()\n    if not ok:\n        break\n    fg = backSub.apply(frame)\n    cv2.imshow("fg", fg)\n    if cv2.waitKey(30) & 0xFF == 27:\n        break\n\ncap.release()\ncv2.destroyAllWindows()`,
+      },
+      {
+        title: 'Meanshift 目标跟踪',
+        desc: '基于直方图反投影的区域跟踪',
+        lang: 'python',
+        code: `import cv2\n\ncap = cv2.VideoCapture(0)\nok, frame = cap.read()\nx, y, w, h = 100, 100, 200, 200  # 初始 ROI\ntrack_window = (x, y, w, h)\n\nroi = frame[y:y+h, x:x+w]\nhsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)\nmask = cv2.inRange(hsv, (0, 60, 32), (180, 255, 255))\nroi_hist = cv2.calcHist([hsv], [0], mask, [180], [0, 180])\ncv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)\n\nterm_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)\nwhile True:\n    ok, frame = cap.read()\n    if not ok:\n        break\n    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)\n    dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)\n    ret, track_window = cv2.meanShift(dst, track_window, term_crit)\n    x, y, w, h = track_window\n    cv2.rectangle(frame, (x, y), (x+w, y+h), 255, 2)\n    cv2.imshow("track", frame)\n    if cv2.waitKey(30) & 0xFF == 27:\n        break`,
+      },
+    ] as Snippet[],
+  },
+  {
+    id: 'dnn',
+    title: '目标检测（DNN）',
+    items: [
+      {
+        title: 'ONNX 模型加载与前向',
+        desc: '5.0 ENGINE_AUTO 优先新引擎',
+        lang: 'python',
+        code: `import cv2\n\nnet = cv2.dnn.readNet("yolov8n.onnx")\nimg = cv2.imread("street.jpg")\nblob = cv2.dnn.blobFromImage(img, 1/255.0, (640, 640), swapRB=True)\nnet.setInput(blob)\nouts = net.forward(net.getUnconnectedOutLayersNames())\nprint([o.shape for o in outs])`,
+      },
+      {
+        title: 'Haar 人脸检测（传统方法）',
+        desc: 'objdetect 经典 API，无需深度模型',
+        lang: 'python',
+        code: `import cv2\n\nface_cascade = cv2.CascadeClassifier(\n    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"\n)\nimg = cv2.imread("people.jpg")\ngray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n\nfaces = face_cascade.detectMultiScale(gray, scaleFactor=1.1,\n                                       minNeighbors=5, minSize=(30, 30))\nfor (x, y, w, h) in faces:\n    cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)\n\ncv2.imwrite("faces.png", img)`,
+      },
+    ] as Snippet[],
+  },
+  {
+    id: 'js',
+    title: '浏览器（OpenCV.js）',
+    items: [
+      {
+        title: '页面中加载 OpenCV.js 并模糊图像',
+        desc: 'WASM 运行时，onRuntimeInitialized 回调',
+        lang: 'js',
+        code: `<script async src="opencv.js" onload="onOpenCvReady();"></script>\n<script>\nfunction onOpenCvReady() {\n  console.log('OpenCV.js is ready:', cv.getBuildInformation());\n}\n\nfunction blurCanvas() {\n  let src = cv.imread('canvasInput');\n  let dst = new cv.Mat();\n  cv.GaussianBlur(src, dst, new cv.Size(15, 15), 0, 0, cv.BORDER_DEFAULT);\n  cv.imshow('canvasOutput', dst);\n  src.delete();\n  dst.delete();\n}\n</script>`,
+      },
+    ] as Snippet[],
+  },
+];
+
+const langLabel = {
+  python: 'Python',
+  cpp: 'C++',
+  js: 'JavaScript',
+} as const;
+---
+
+<BaseLayout title="示例代码" description="OpenCV 多语言示例：基础操作、图像处理、特征匹配、视频分析、DNN 检测与 OpenCV.js。">
+  <PageHero
+    title="示例代码"
+    lead="按场景分类的可运行示例，覆盖 C++ / Python / JavaScript。完整示例库见官方 <a class='text-accent hover:underline' href='https://github.com/opencv/opencv/tree/master/samples' target='_blank' rel='noopener'>GitHub samples 目录 ↗</a>。"
+  />
+
+  <div class="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
+    <nav class="flex flex-wrap gap-2" aria-label="示例分类">
+      {
+        groups.map((g) => (
+          <a href={`#${g.id}`} class="anchor-pill">
+            {g.title}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="mt-10 space-y-14">
+      {
+        groups.map((g) => (
+          <section id={g.id} class="scroll-mt-24">
+            <h2 class="section-title">{g.title}</h2>
+            <div class="mt-5 grid gap-6 lg:grid-cols-2">
+              {g.items.map((item) => (
+                <article class="overflow-hidden card">
+                  <div class="flex items-start justify-between gap-3 border-b border-line px-5 py-3">
+                    <div>
+                      <h3 class="text-sm font-semibold text-ink">{item.title}</h3>
+                      <p class="mt-0.5 text-xs text-muted">{item.desc}</p>
+                    </div>
+                    <span class="chip shrink-0">{langLabel[item.lang]}</span>
+                  </div>
+                  <pre class="overflow-x-auto bg-codebg p-4 font-mono text-xs leading-relaxed text-codeink"><code>{item.code}</code></pre>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>
